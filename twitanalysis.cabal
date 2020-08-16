@@ -4,17 +4,17 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1021b6ed32bad5840fc076e78ea74bedc8aaeb24985d06cd0575fc03c6c882fd
+-- hash: 72deaade19a5f08f8070957310b8031189096209f4d2e254a2b4539d3d797996
 
 name:           twitanalysis
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/twitanalysis#readme>
-homepage:       https://github.com/githubuser/twitanalysis#readme
-bug-reports:    https://github.com/githubuser/twitanalysis/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2020 Author name here
-license:        BSD3
+homepage:       https://github.com/easoncxz/twitanalysis#readme
+bug-reports:    https://github.com/easoncxz/twitanalysis/issues
+author:         easoncxz
+maintainer:     easoncxz@gmail.com
+copyright:      2020 easoncxz
+license:        AllRightsReserved
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -23,7 +23,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/twitanalysis
+  location: https://github.com/easoncxz/twitanalysis
 
 library
   exposed-modules:
@@ -38,6 +38,7 @@ library
     , bytestring
     , containers
     , hspec
+    , oauthenticated
     , scotty
     , text
     , twitter-types
@@ -58,6 +59,7 @@ executable twitanalysis-exe
     , bytestring
     , containers
     , hspec
+    , oauthenticated
     , scotty
     , text
     , twitanalysis
@@ -80,6 +82,7 @@ test-suite twitanalysis-test
     , bytestring
     , containers
     , hspec
+    , oauthenticated
     , scotty
     , text
     , twitanalysis

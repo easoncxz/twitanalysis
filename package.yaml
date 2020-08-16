@@ -1,10 +1,10 @@
 name:                twitanalysis
 version:             0.1.0.0
-github:              "githubuser/twitanalysis"
-license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2020 Author name here"
+github:              "easoncxz/twitanalysis"
+license:             AllRightsReserved
+author:              "easoncxz"
+maintainer:          "easoncxz@gmail.com"
+copyright:           "2020 easoncxz"
 
 extra-source-files:
 - README.md
@@ -25,6 +25,7 @@ dependencies:
 - bytestring
 - containers
 - hspec
+- oauthenticated
 - scotty
 - text
 - twitter-types
