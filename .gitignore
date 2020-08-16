@@ -1,2 +1,8 @@
 .stack-work/
 *~
+
+# Manual ignores
+ignore/
+
+# vim
+.swp
