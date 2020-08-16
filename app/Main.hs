@@ -1,6 +1,8 @@
 module Main where
 
-import Lib
+import qualified Web.Scotty as Scotty
+
+import qualified Lib
 
 main :: IO ()
-main = someFunc
+main = Scotty.scotty 5000 Lib.scottyDefinition
