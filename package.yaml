@@ -28,6 +28,8 @@ dependencies:
 - scotty
 - text
 - twitter-types
+- wai
+- wai-extra
 
 library:
   source-dirs: src
