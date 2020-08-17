@@ -22,11 +22,17 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - aeson
 - base >= 4.7 && < 5
+- blaze-html
+- blaze-markup
 - bytestring
 - containers
 - hspec
+- http-client
+- http-client-tls
+- microlens
 - oauthenticated
 - scotty
+- stm
 - text
 - twitter-types
 - wai

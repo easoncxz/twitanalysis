@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 72deaade19a5f08f8070957310b8031189096209f4d2e254a2b4539d3d797996
+-- hash: 37c2a09333fdd89f44d2adf6c00c780ee30555d32ae17df974a11519b2ddd926
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -35,11 +35,17 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , blaze-html
+    , blaze-markup
     , bytestring
     , containers
     , hspec
+    , http-client
+    , http-client-tls
+    , microlens
     , oauthenticated
     , scotty
+    , stm
     , text
     , twitter-types
     , wai
@@ -56,11 +62,17 @@ executable twitanalysis-exe
   build-depends:
       aeson
     , base >=4.7 && <5
+    , blaze-html
+    , blaze-markup
     , bytestring
     , containers
     , hspec
+    , http-client
+    , http-client-tls
+    , microlens
     , oauthenticated
     , scotty
+    , stm
     , text
     , twitanalysis
     , twitter-types
@@ -79,11 +91,17 @@ test-suite twitanalysis-test
   build-depends:
       aeson
     , base >=4.7 && <5
+    , blaze-html
+    , blaze-markup
     , bytestring
     , containers
     , hspec
+    , http-client
+    , http-client-tls
+    , microlens
     , oauthenticated
     , scotty
+    , stm
     , text
     , twitanalysis
     , twitter-types
