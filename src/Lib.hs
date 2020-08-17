@@ -50,8 +50,7 @@ myThreeLegged =
     "https://api.twitter.com/oauth/request_token"
     "https://api.twitter.com/oauth/authorize"
     "https://api.twitter.com/oauth/access_token"
-    (OAuth.Callback
-       (fromString ("http://localhost.easoncxz.com" <> oauthCallbackPath)))
+    (OAuth.Callback (fromString ("http://localhost:5000" <> oauthCallbackPath)))
 
 myOAuthServer :: OAuthParams.Server
 myOAuthServer =
@@ -123,18 +122,23 @@ newAppEnv = do
   return (AppEnv tlsMan clientCred cache)
 
 startOAuthFlow :: AppEnv -> Scotty.ActionM ()
-startOAuthFlow (AppEnv man clientCred cache) = do
-  liftIO (putStrLn "Starting startOAuthFlow")
-  request <-
-    makeTemporaryTokenRequest
-      clientCred
-      myOAuthServer {OAuthParams.parameterMethod = OAuthParams.QueryString}
-      myThreeLegged
-      man
-  liftIO $ putStr "Using the following request for request token: "
-  liftIO $ putStrLn (show request)
-  resp <- liftIO (Http.httpLbs request man)
-  let eitherRequestToken = tryParseToken myOAuthServer (Http.responseBody resp)
+startOAuthFlow (AppEnv man clientCred cache)
+  --request <-
+  --  makeTemporaryTokenRequest
+  --    clientCred
+  --    myOAuthServer {OAuthParams.parameterMethod = OAuthParams.QueryString}
+  --    myThreeLegged
+  --    man
+  --liftIO $ putStr "Using the following request for request token: "
+  --liftIO $ putStrLn (show request)
+  --resp <- liftIO (Http.httpLbs request man)
+  --let eitherRequestToken = tryParseToken myOAuthServer (Http.responseBody resp)
+ = do
+  eitherRequestToken <-
+    let srv =
+          myOAuthServer {OAuthParams.parameterMethod = OAuthParams.QueryString}
+     in fmap Http.responseBody . liftIO $
+        OAuth.requestTemporaryToken clientCred srv myThreeLegged man
   case eitherRequestToken of
     Left bs -> do
       liftIO $ putStrLn "Error: could not parse request token"
@@ -142,7 +146,7 @@ startOAuthFlow (AppEnv man clientCred cache) = do
     Right reqToken -> do
       url <-
         liftIO $ do
-          putStrLn "Finished requestTemporaryToken"
+          putStrLn ("Successfully received request token: " ++ show reqToken)
           STM.atomically $ do
             map <- STM.readTVar cache
             let map' = Map.insert (reqToken ^. OAuthCred.key) reqToken map
@@ -181,15 +185,17 @@ handleOAuthCallback AppEnv { appEnvOAuthClientCred = clientCred
          httpMan)
   case Http.responseBody response of
     Left bs -> fail (BSL8.unpack bs)
-    Right accToken ->
+    Right accToken -> do
+      liftIO
+        (putStrLn ("Successfully received access token: " ++ show accToken))
       Scotty.html $
-      mintercalate
-        "\n"
-        [ "Here is your access token: "
-        , "<pre>"
-        , BlazeT.renderHtml (Blaze.string (show accToken))
-        , "</pre>"
-        ]
+        mintercalate
+          "\n"
+          [ "Here is your access token: "
+          , "<pre>"
+          , BlazeT.renderHtml (Blaze.string (show accToken))
+          , "</pre>"
+          ]
 
 viewHomepage :: Scotty.ActionM ()
 viewHomepage = Scotty.html "<h1>Hello from Scotty!</h1>"
