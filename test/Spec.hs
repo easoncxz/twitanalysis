@@ -18,5 +18,5 @@ main =
         case Aeson.eitherDecode sampleJsonBs of
           Left msg -> fail msg
           Right (status :: Twitter.Status) -> do
-            BSL8.putStrLn (Aeson.encode status)
             Twitter.statusId status `shouldBe` 850007368138018817
+            -- BSL8.putStrLn (Aeson.encode status)
