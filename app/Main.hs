@@ -11,7 +11,7 @@ scottyApp :: Lib.AppEnv -> Scotty.ScottyM ()
 scottyApp appEnv = do
   Scotty.get "/" Lib.viewHomepage
   Scotty.get "/login" (Lib.startOAuthFlow appEnv)
-  Scotty.get "/callback" (Lib.handleOAuthCallback appEnv)
+  Scotty.get Lib.oauthCallbackPath (Lib.handleOAuthCallback appEnv)
 
 main :: IO ()
 main = do

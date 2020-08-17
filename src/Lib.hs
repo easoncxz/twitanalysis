@@ -8,17 +8,19 @@ import qualified Control.Concurrent.STM as STM
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
+import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import Data.Monoid (Monoid, (<>), mconcat)
-import Data.String (IsString)
+import Data.String (IsString, fromString)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as TextL
 import Lens.Micro ((^.))
 import qualified Network.HTTP.Client as Http
 import qualified Network.HTTP.Client.TLS as Tls
+import qualified Network.OAuth as OAuth
 import qualified Network.OAuth.ThreeLegged as OAuth
 import qualified Network.OAuth.Types.Credentials as OAuthCred
 import qualified Network.OAuth.Types.Params as OAuthParams
@@ -33,6 +35,9 @@ mintercalate sep list = mconcat (List.intersperse sep list)
 relativeUrl :: (IsString s, Monoid s) => s -> s
 relativeUrl = ("https://api.twitter.com/1.1/" <>)
 
+oauthCallbackPath :: IsString s => s
+oauthCallbackPath = "/oauth-callback"
+
 -- | See Twitter docs here:
 --
 --    https://developer.twitter.com/en/docs/authentication/api-reference/request_token
@@ -42,15 +47,16 @@ myThreeLegged :: OAuth.ThreeLegged
 myThreeLegged =
   Maybe.fromJust $
   OAuth.parseThreeLegged
-    (relativeUrl "oauth/request_token")
-    (relativeUrl "oauth/authorize")
-    (relativeUrl "oauth/access_token")
-    (OAuth.Callback "http://127.0.0.1/callback")
+    "https://api.twitter.com/oauth/request_token"
+    "https://api.twitter.com/oauth/authorize"
+    "https://api.twitter.com/oauth/access_token"
+    (OAuth.Callback
+       (fromString ("http://localhost.easoncxz.com" <> oauthCallbackPath)))
 
 myOAuthServer :: OAuthParams.Server
 myOAuthServer =
   OAuthParams.Server
-    OAuthParams.QueryString
+    OAuthParams.AuthorizationHeader
     OAuthParams.HmacSha1
     OAuthParams.OAuth1
 
@@ -61,6 +67,46 @@ newClientCred =
     secret <- Sys.getEnv "TWITTER_CONSUMER_SECRET"
     return $
       OAuthCred.clientCred (OAuthCred.Token (BS8.pack key) (BS8.pack secret))
+
+-- | Copied and adapted from oauthenticated source
+makeTemporaryTokenRequest ::
+     (MonadIO m)
+  => OAuthCred.Cred OAuth.Client
+  -> OAuth.Server
+  -> OAuth.ThreeLegged
+  -> Http.Manager
+  -> m Http.Request
+makeTemporaryTokenRequest cr srv OAuth.ThreeLegged { OAuth.temporaryTokenRequest = temporaryTokenRequest
+                                                   , OAuth.callback = callback
+                                                   } man =
+  liftIO $ do
+    oax <- OAuth.freshOa cr
+    let req =
+          OAuth.sign
+            (oax
+               { OAuthParams.workflow =
+                   OAuthParams.TemporaryTokenRequest callback
+               })
+            srv
+            temporaryTokenRequest
+    return req
+
+-- | Copied and adapted from oauthenticated source
+tryParseToken ::
+     OAuth.Server -> BSL.ByteString -> Either BSL.ByteString (OAuth.Token ty)
+tryParseToken srv lbs =
+  case maybeParseToken lbs of
+    Nothing -> Left lbs
+    Just tok -> Right tok
+  where
+    maybeParseToken lbs = do
+      (confirmed, tok) <- OAuth.fromUrlEncoded $ BSL.toStrict lbs
+      case OAuthParams.oAuthVersion srv of
+        OAuth.OAuthCommunity1 -> return tok
+        _ ->
+          if confirmed
+            then return tok
+            else fail "Must be confirmed"
 
 data AppEnv =
   AppEnv
@@ -78,14 +124,25 @@ newAppEnv = do
 
 startOAuthFlow :: AppEnv -> Scotty.ActionM ()
 startOAuthFlow (AppEnv man clientCred cache) = do
-  eitherRequestToken <-
-    liftIO
-      (OAuth.requestTemporaryToken clientCred myOAuthServer myThreeLegged man)
-  case Http.responseBody eitherRequestToken of
-    Left bs -> fail (BSL8.unpack bs)
+  liftIO (putStrLn "Starting startOAuthFlow")
+  request <-
+    makeTemporaryTokenRequest
+      clientCred
+      myOAuthServer {OAuthParams.parameterMethod = OAuthParams.QueryString}
+      myThreeLegged
+      man
+  liftIO $ putStr "Using the following request for request token: "
+  liftIO $ putStrLn (show request)
+  resp <- liftIO (Http.httpLbs request man)
+  let eitherRequestToken = tryParseToken myOAuthServer (Http.responseBody resp)
+  case eitherRequestToken of
+    Left bs -> do
+      liftIO $ putStrLn "Error: could not parse request token"
+      Scotty.raw bs
     Right reqToken -> do
       url <-
         liftIO $ do
+          putStrLn "Finished requestTemporaryToken"
           STM.atomically $ do
             map <- STM.readTVar cache
             let map' = Map.insert (reqToken ^. OAuthCred.key) reqToken map
@@ -94,8 +151,8 @@ startOAuthFlow (AppEnv man clientCred cache) = do
                 OAuth.buildAuthorizationUrl
                   (OAuthCred.temporaryCred reqToken clientCred)
                   myThreeLegged
-          putStrLn ("Redirecting to URL: " ++ show authorizeUrl)
           return (TextL.pack (show authorizeUrl))
+      liftIO $ putStrLn ("Redirecting to URL: " ++ show url)
       Scotty.redirect url
 
 handleOAuthCallback :: AppEnv -> Scotty.ActionM ()

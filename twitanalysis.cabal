@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 37c2a09333fdd89f44d2adf6c00c780ee30555d32ae17df974a11519b2ddd926
+-- hash: 765661b22b15c071d0c7bdfad84252e3dcba9e0697d75f05b56e5defde19fc34
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
     , blaze-markup
     , bytestring
     , containers
+    , cryptonite
     , hspec
     , http-client
     , http-client-tls
@@ -66,6 +67,7 @@ executable twitanalysis-exe
     , blaze-markup
     , bytestring
     , containers
+    , cryptonite
     , hspec
     , http-client
     , http-client-tls
@@ -95,6 +97,7 @@ test-suite twitanalysis-test
     , blaze-markup
     , bytestring
     , containers
+    , cryptonite
     , hspec
     , http-client
     , http-client-tls
