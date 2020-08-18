@@ -30,6 +30,7 @@ dependencies:
 - hspec
 - http-client
 - http-client-tls
+- http-types
 - microlens
 - oauthenticated
 - scotty

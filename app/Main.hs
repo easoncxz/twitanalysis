@@ -8,6 +8,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Tuple (uncurry)
 import qualified Debug.Trace as Trace
+import qualified Network.HTTP.Types as Http
 import qualified Network.Wai as Wai
 import Network.Wai.Middleware.RequestLogger (logStdout)
 import qualified Network.Wai.Middleware.Rewrite as Rewrite
@@ -61,6 +62,20 @@ prefixedStatic prefix next request respond = do
         respond
     _ -> next request respond
 
+favicon :: Wai.Response
+favicon =
+  Wai.responseFile
+    Http.status200
+    [("Content-Type", "image/x-icon")]
+    "frontend-app/static/favicon.ico"
+    Nothing
+
+justFavicon :: Wai.Middleware
+justFavicon next request respond =
+  case Wai.rawPathInfo request of
+    "/favicon.ico" -> respond favicon
+    _ -> next request respond
+
 main :: IO ()
 main = do
   appEnv <- Lib.newAppEnv
@@ -68,5 +83,6 @@ main = do
     ("Using client credentials: " ++ show (Lib.appEnvOAuthClientCred appEnv))
   Scotty.scotty 5000 $ do
     Scotty.middleware logStdout
+    Scotty.middleware justFavicon
     Scotty.middleware (prefixedStatic "/static")
     scottyApp appEnv

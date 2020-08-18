@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9bef91a346adeb2eec8f1141f0afef15a042fb0d671e0cbb7126c3772424d4d7
+-- hash: 8a8b200625593ee4111dd66a1ddb68d0cf6e997344046b61058f76225944e00d
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -43,6 +43,7 @@ library
     , hspec
     , http-client
     , http-client-tls
+    , http-types
     , microlens
     , oauthenticated
     , scotty
@@ -72,6 +73,7 @@ executable twitanalysis-exe
     , hspec
     , http-client
     , http-client-tls
+    , http-types
     , microlens
     , oauthenticated
     , scotty
@@ -103,6 +105,7 @@ test-suite twitanalysis-test
     , hspec
     , http-client
     , http-client-tls
+    , http-types
     , microlens
     , oauthenticated
     , scotty
