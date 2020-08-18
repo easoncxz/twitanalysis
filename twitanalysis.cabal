@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 765661b22b15c071d0c7bdfad84252e3dcba9e0697d75f05b56e5defde19fc34
+-- hash: 9bef91a346adeb2eec8f1141f0afef15a042fb0d671e0cbb7126c3772424d4d7
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -51,6 +51,7 @@ library
     , twitter-types
     , wai
     , wai-extra
+    , wai-middleware-static
   default-language: Haskell2010
 
 executable twitanalysis-exe
@@ -80,6 +81,7 @@ executable twitanalysis-exe
     , twitter-types
     , wai
     , wai-extra
+    , wai-middleware-static
   default-language: Haskell2010
 
 test-suite twitanalysis-test
@@ -110,4 +112,5 @@ test-suite twitanalysis-test
     , twitter-types
     , wai
     , wai-extra
+    , wai-middleware-static
   default-language: Haskell2010

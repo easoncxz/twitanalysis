@@ -38,6 +38,7 @@ dependencies:
 - twitter-types
 - wai
 - wai-extra
+- wai-middleware-static
 
 library:
   source-dirs: src

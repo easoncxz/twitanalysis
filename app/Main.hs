@@ -2,7 +2,9 @@
 
 module Main where
 
+import Data.Monoid ((<>))
 import Network.Wai.Middleware.RequestLogger (logStdout)
+import qualified Network.Wai.Middleware.Static as Static
 import qualified Web.Scotty as Scotty
 
 import qualified Lib
@@ -20,4 +22,7 @@ main = do
     ("Using client credentials: " ++ show (Lib.appEnvOAuthClientCred appEnv))
   Scotty.scotty 5000 $ do
     Scotty.middleware logStdout
+    Scotty.middleware
+      (Static.staticPolicy
+         (Static.noDots <> Static.addBase "frontend-app/static/"))
     scottyApp appEnv
