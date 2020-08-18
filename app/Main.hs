@@ -32,11 +32,17 @@ myStaticMiddleware =
       Static.predicate
         (\s -> Trace.trace ("The static path is: " ++ show s) True)
 
-eatPrefix :: [Text] -> Wai.Request -> Wai.Request
-eatPrefix prefix =
+dropPrefix :: (a -> b -> Bool) -> [a] -> [b] -> [b]
+dropPrefix eq (x:xs) (y:ys) =
+  if x `eq` y
+    then dropPrefix eq xs ys
+    else ys
+dropPrefix eq _ ys = ys
+
+eatRequestPathPrefix :: [Text] -> Wai.Request -> Wai.Request
+eatRequestPathPrefix prefix =
   Rewrite.rewriteRequestPure $ \(pathComps, query) _headers ->
-    let restComps = map snd . filter (uncurry (==)) $ zip prefix pathComps
-     in (restComps, query)
+    (dropPrefix (==) prefix pathComps, query)
 
 parsePrefix :: String -> [Text]
 parsePrefix prefix = filter (/= "") (Text.splitOn "/" (Text.pack prefix))
@@ -49,7 +55,10 @@ prefixedStatic prefix next request respond = do
          (BS8.unpack (Wai.rawPathInfo request)) of
     [(_thePrefix, rest)] -> do
       putStrLn ("The rest of the rawPathInfo is: " ++ rest)
-      myStaticMiddleware next (eatPrefix (parsePrefix rest) request) respond
+      myStaticMiddleware
+        next
+        (eatRequestPathPrefix (parsePrefix rest) request)
+        respond
     _ -> next request respond
 
 main :: IO ()
