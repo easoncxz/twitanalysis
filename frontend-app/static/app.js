@@ -1,16 +1,23 @@
 "use strict";
 
-import {
-  getMessage,
-} from "./dependencies.js";
+import { getMessage } from "./dependencies.js";
+import { loadReactComponentOnto } from "./react-things.js";
 
 function registerListeners() {
-  const button = document.getElementById("one-button");
+  const helloButton = document.getElementById("one-button");
   const label = document.getElementById("one-label");
-  button.addEventListener(
+  helloButton.addEventListener(
     "click",
     (_mouseEvent) => {
       label.innerText = getMessage();
+    },
+  );
+  const loadReactButton = document.getElementById("load-react-button");
+  const reactContainer = document.getElementById("react-root-load-point");
+  loadReactButton.addEventListener(
+    "click",
+    (_mouseEvent) => {
+      loadReactComponentOnto(reactContainer);
     },
   );
 }
