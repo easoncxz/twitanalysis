@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
 import {
   getMessage,
-} from './dependencies.js';
+} from "./dependencies.js";
 
 function registerListeners() {
-  const button = document.getElementById('one-button');
-  const label = document.getElementById('one-label');
+  const button = document.getElementById("one-button");
+  const label = document.getElementById("one-label");
   button.addEventListener(
     "click",
     (_mouseEvent) => {
@@ -15,4 +15,4 @@ function registerListeners() {
   );
 }
 
-window.addEventListener('load', registerListeners);
+window.addEventListener("load", registerListeners);
