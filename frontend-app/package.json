@@ -1,0 +1,25 @@
+{
+  "name": "twitanalysis-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:easoncxz/twitanalysis.git"
+  },
+  "keywords": [
+    "twitter"
+  ],
+  "author": "easoncxz",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/easoncxz/twitanalysis/issues"
+  },
+  "homepage": "https://github.com/easoncxz/twitanalysis#readme",
+  "devDependencies": {
+    "rollup": "^2.26.4"
+  }
+}
