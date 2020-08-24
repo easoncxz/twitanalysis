@@ -4,15 +4,31 @@
 
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import nodejsBuiltins from 'rollup-plugin-node-builtins';
+import nodejsGlobals from 'rollup-plugin-node-globals';
 
-export default {
-  input: 'src/main.js',
-  output: {
-    file: 'static/bundle.js',
-    format: 'iife'
-  },
-  plugins: [
-    resolve(),
-    commonjs(),
-  ]
-};
+void nodejsBuiltins, nodejsGlobals;
+
+function roll(input, output) {
+  return {
+    input,
+    output: {
+      file: output,
+      format: 'es'
+    },
+    plugins: [
+      resolve(),
+      commonjs(),
+      //nodejsBuiltins(),
+      nodejsGlobals(),
+    ],
+  };
+}
+
+function synonymousTs(input) {
+  return [`ts-out/${input}`, `static/${input}`];
+}
+
+export default [
+  roll(...synonymousTs('main.js')),
+];

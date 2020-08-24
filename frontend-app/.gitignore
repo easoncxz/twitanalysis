@@ -1,4 +1,7 @@
 node_modules
 
 # Rollup output
-static/bundle.js
+static/**/*.js
+
+# TypeScript tsc output
+ts-out/**

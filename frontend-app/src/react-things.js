@@ -1,9 +1,4 @@
 
-//import {
-//  React,
-//  ReactDOM,
-//} from './dependencies.js';
-
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -18,6 +13,9 @@ import ReactDOM from 'react-dom';
  */
 
 class LikeButton extends React.Component {
+  /**
+   * @param props {Object}
+   */
   constructor(props) {
     super(props);
     this.state = { liked: false };
@@ -36,6 +34,9 @@ class LikeButton extends React.Component {
   }
 }
 
+/**
+ * @param elem {HTMLElement}
+ */
 export function loadReactComponentOnto(elem) {
   // Unmount: https://stackoverflow.com/a/44900331
   ReactDOM.unmountComponentAtNode(elem);

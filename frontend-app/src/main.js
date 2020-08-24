@@ -6,20 +6,25 @@ import { loadReactComponentOnto } from './react-things.js';
 function registerListeners() {
   const helloButton = document.getElementById('one-button');
   const label = document.getElementById('one-label');
-  helloButton.addEventListener(
-    'click',
-    (_mouseEvent) => {
-      label.innerText = getMessage();
-    },
-  );
+  if (helloButton && label) {
+    helloButton.addEventListener(
+      'click',
+      (_mouseEvent) => {
+        const t = getMessage();
+        label.innerText = t;
+      },
+    );
+  }
   const loadReactButton = document.getElementById('load-react-button');
   const reactContainer = document.getElementById('react-root-load-point');
-  loadReactButton.addEventListener(
-    'click',
-    (_mouseEvent) => {
-      loadReactComponentOnto(reactContainer);
-    },
-  );
+  if (loadReactButton && reactContainer) {
+    loadReactButton.addEventListener(
+      'click',
+      (_mouseEvent) => {
+        loadReactComponentOnto(reactContainer);
+      },
+    );
+  }
 }
 
 window.addEventListener('load', registerListeners);
