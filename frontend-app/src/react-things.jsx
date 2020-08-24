@@ -26,10 +26,10 @@ class LikeButton extends React.Component {
       return 'You liked this.';
     }
 
-    return React.createElement(
-      'button',
-      { onClick: () => this.setState({ liked: true }) },
-      'Like'
+    return (
+      <button onClick={ () => this.setState({ liked: true }) }>
+          Like
+      </button>
     );
   }
 }
@@ -40,5 +40,5 @@ class LikeButton extends React.Component {
 export function loadReactComponentOnto(elem) {
   // Unmount: https://stackoverflow.com/a/44900331
   ReactDOM.unmountComponentAtNode(elem);
-  ReactDOM.render(React.createElement(LikeButton), elem);
+  ReactDOM.render(<LikeButton />, elem);
 }

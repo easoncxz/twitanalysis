@@ -10,6 +10,7 @@
         "checkJs": true,
         "declaration": true,
         "declarationMap": true,
+        "jsx": "react",
         "outDir": "ts-out",
         "sourceMap": true,
         "target": "es2015",
