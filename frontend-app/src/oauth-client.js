@@ -1,6 +1,9 @@
 const util = require('util');
 const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
+const fetch = require('node-fetch');
+
+const accessCred = require('../access-token.json');
 
 /**
  * @type <T>(msg: string) => T
@@ -25,34 +28,52 @@ const oauth = OAuth({
       .digest('base64');
   },
 });
+module.exports.oauth = oauth;
+
+function prepareRequest() {
+  const url = 'https://api.twitter.com/1.1/statuses/home_timeline.json';
+  const method = 'GET';
+  const data = {
+    //count: 200,
+    //include_entities: true,
+  };
+  const request = { url, method, data: void data };
+  const header = oauth.toHeader(
+    oauth.authorize(request, accessCred)
+  );
+  return [url, {
+    headers: {
+      'Authorization': header['Authorization']
+    }
+  }];
+}
+module.exports.prepareRequest = prepareRequest;
+
+function sendRequest(url, opts) {
+  return new Promise((resolve, reject) => {
+    fetch(url, opts).then(resp => {
+      if (resp.ok) {
+        resolve(resp.json());
+      } else {
+        reject(util.inspect(resp));
+      }
+    }, e => reject(e));
+  });
+}
+module.exports.sendRequest = sendRequest;
 
 function main() {
-  const [_node, _script, accessToken, accessSecret] = process.argv.slice();
-  const token = {
-    key: accessToken,
-    secret: accessSecret,
-  };
-  const request = {
-    url: 'https://google.com/',
-    method: 'GET',
-    data: {
-      q: 'foobar'
-    }
-  };
-  const header = oauth.toHeader(
-    oauth.authorize(request, token)
-  );
-  console.log(util.inspect(
-    header,
-    {
-      colors: true,
-    }
-  ));
+  const req = prepareRequest();
+  sendRequest(...req).then(j => {
+    console.log(util.inspect(j));
+  }).catch(e => {
+    console.log(util.inspect(e));
+  });
 }
-
-module.exports.oauth = oauth;
 module.exports.main = main;
 
 // Run like this:
 //    $ node src/oauth-client.js access-token access-token-secret
-main();
+if (require && require instanceof Object && require.main === module) {
+  main();
+}
