@@ -27,4 +27,6 @@ function registerListeners() {
   }
 }
 
-window.addEventListener('load', registerListeners);
+if (typeof window === 'object' && window.addEventListener) {
+  window.addEventListener('load', registerListeners);
+}

@@ -14,10 +14,14 @@
         "outDir": "ts-out",
         "sourceMap": true,
         "target": "es2015",
+        "module": "commonjs",
         "strict": true,
-        "baseUrl": "./",
         "esModuleInterop": true,
         "moduleResolution": "node",
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "preserveWatchOutput": true,
+        "resolveJsonModule": true,
         "forceConsistentCasingInFileNames": true
     }
 }

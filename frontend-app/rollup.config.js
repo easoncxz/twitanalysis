@@ -1,34 +1,35 @@
 
+import path from 'path';
+
 // Guide docs: https://rollupjs.org/guide/en/#rollupplugin-node-resolve
 // Example: https://github.com/rollup/rollup-starter-app/blob/master/rollup.config.js
 
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import nodejsBuiltins from 'rollup-plugin-node-builtins';
-import nodejsGlobals from 'rollup-plugin-node-globals';
+import pluginNodeResolve from '@rollup/plugin-node-resolve';
+import pluginCommonjs from '@rollup/plugin-commonjs';
+import pluginNodejsGlobals from 'rollup-plugin-node-globals';
 
-void nodejsBuiltins, nodejsGlobals;
+void pluginNodejsGlobals;
 
 function roll(input, output) {
   return {
     input,
     output: {
       file: output,
-      format: 'es'
+      format: 'iife',
+      name: `Rollup_${path.basename(input, 'js')}`,
     },
     plugins: [
-      resolve(),
-      commonjs(),
-      //nodejsBuiltins(),
-      nodejsGlobals(),
+      pluginNodeResolve(),
+      pluginCommonjs(),
+      pluginNodejsGlobals(),
     ],
   };
 }
 
-function synonymousTs(input) {
+function synonymousTsOut(input) {
   return [`ts-out/${input}`, `static/${input}`];
 }
 
 export default [
-  roll(...synonymousTs('main.js')),
+  roll(...synonymousTsOut('main.js')),
 ];
