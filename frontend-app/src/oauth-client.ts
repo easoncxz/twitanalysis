@@ -5,7 +5,6 @@ import path from 'path';
 import crypto from 'crypto';
 import OAuth from 'oauth-1.0a';
 import fetch from 'cross-fetch';
-import FormData from 'form-data';
 
 import { srcPath } from './nodejs-env';
 
@@ -82,10 +81,10 @@ export function headersToPairs(h: HeadersInit): [string, string][] {
  */
 export const mkPrepFetch = (o: OAuth) => (a: OAuth.Token) => (opts: OAuth.RequestOptions): [RequestInfo, RequestInit | undefined] => {
   const authorisation = o.toHeader(o.authorize(opts, a)).Authorization;
-  const body = new FormData();
+  const params = new URLSearchParams();
   if (opts.data instanceof Object) {
-    for (const k in opts.data) {
-      body.append(k, opts.data[k]);
+    for (const k of Object.keys(opts.data).sort()) {
+      params.append(k, opts.data[k]);
     }
   }
   const signedInit: RequestInit = {
@@ -95,7 +94,7 @@ export const mkPrepFetch = (o: OAuth) => (a: OAuth.Token) => (opts: OAuth.Reques
       'Authorization': authorisation,
     },
     method: opts.method,
-    body: body as unknown as any, //eslint-disable-line @typescript-eslint/no-explicit-any
+    body: params.toString(),
   };
   return [opts.url, signedInit];
 };

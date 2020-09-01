@@ -3,6 +3,7 @@ export const srcPath = __dirname;
 export const isMain = (): boolean => require.main === module;
 
 import util from 'util';
+import fetch from 'cross-fetch';
 
 import * as OAuthClient from './oauth-client';
 import * as OtherOAuthClient from './oauth-client-again';
@@ -13,19 +14,20 @@ function tryOAuthClient() {
       url: 'https://api.twitter.com/1.1/statuses/update.json',
       method: 'POST',
       data: {
-        status: 'Tweeting from ts-node REPL.'
+        status: "Let's see if I can tweet using the new `fetch` API..." //eslint-disable-line quotes
       },
     }
   );
   console.log(args);
-  //fetch(...args)
-  //  .then(r => {
-  //    console.log(r);
-  //    return r.json();
-  //  })
-  //  .then(j => {
-  //    console.log(j);
-  //  });
+  fetch(...args)
+    .then(
+      (r: Response) => {
+        console.log(r);
+        return r.json();
+      },
+      (e) => {
+        console.log(e);
+      });
 }
 void tryOAuthClient;
 
@@ -47,7 +49,8 @@ function tryOtherOAuthClient() {
     }
   );
 }
+void tryOtherOAuthClient;
 
 if (isMain()) {
-  tryOtherOAuthClient();
+  tryOAuthClient();
 }
