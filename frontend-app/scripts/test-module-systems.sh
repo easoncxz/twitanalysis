@@ -10,20 +10,20 @@ if [ -d ts-out ]; then
   rm -rfv ts-out
 fi
 
-yarn ts-node src/nodejs-main.ts
+yarn ts-node src/nodejs/format-curl-command.ts
 
 yarn ts-node <<EOF
-import { formatCurlCommand } from './src/oauth-client';
+import { formatCurlCommand } from './src/nodejs/format-curl-command';
 console.log(formatCurlCommand('http://google.com', {body: ''}));
 EOF
 
 # Now compile:
 yarn build
 
-node ts-out/nodejs-main.js
+node ts-out/nodejs/format-curl-command.js
 
 node <<EOF
-const oc = require('./ts-out/oauth-client');
+const oc = require('./ts-out/nodejs/format-curl-command');
 console.log(oc.formatCurlCommand('http://google.com', {body: ''}));
 EOF
 
