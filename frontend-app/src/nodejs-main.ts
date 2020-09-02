@@ -14,7 +14,7 @@ function tryOAuthClient() {
       url: 'https://api.twitter.com/1.1/statuses/update.json',
       method: 'POST',
       data: {
-        status: "Let's see if I can tweet using the new `fetch` API..." //eslint-disable-line quotes
+        status: "Testing using URLSearchParams with fetch..." //eslint-disable-line quotes
       },
     }
   );
