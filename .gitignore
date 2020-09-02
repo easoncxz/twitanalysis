@@ -6,3 +6,5 @@ ignore/
 
 # vim
 *.swp
+
+frontend-app/

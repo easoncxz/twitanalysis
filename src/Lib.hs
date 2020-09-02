@@ -196,6 +196,3 @@ handleOAuthCallback AppEnv { appEnvOAuthClientCred = clientCred
           , BlazeT.renderHtml (Blaze.string (show accToken))
           , "</pre>"
           ]
-
-viewHomepage :: Scotty.ActionM ()
-viewHomepage = Scotty.html "<h1>Hello from Scotty!</h1>"
