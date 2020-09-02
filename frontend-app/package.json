@@ -2,7 +2,6 @@
   "name": "twitanalysis-frontend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "ru": "rollup -c",
     "mjs": "find ts-out -name '*.js' -print0 | xargs -0 -n 1 -I @ bash -c 'f=\"@\"; mv \"$f\" \"${f%.js}.mjs\"'",
@@ -36,7 +35,6 @@
     "concurrently": "^5.3.0",
     "eslint": "^7.7.0",
     "eslint-plugin-react": "^7.20.6",
-    "http-echo-server": "^2.1.1",
     "javascript-typescript-langserver": "^2.11.3",
     "rollup": "^2.26.4",
     "rollup-plugin-node-globals": "^1.4.0",
@@ -45,9 +43,6 @@
   },
   "dependencies": {
     "cross-fetch": "^3.0.5",
-    "crypto": "^1.0.1",
-    "form-data": "^3.0.0",
-    "oauth": "^0.9.15",
     "oauth-1.0a": "^2.2.6",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
