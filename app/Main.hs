@@ -7,17 +7,19 @@ import qualified Web.Scotty as Scotty
 
 import qualified Lib
 import qualified MiscWaiMiddleware as Middle
+import qualified TwitterOAuthConsumer as TwitterO
 
-scottyApp :: Lib.AppEnv -> Scotty.ScottyM ()
+scottyApp :: TwitterO.AppEnv -> Scotty.ScottyM ()
 scottyApp appEnv = do
   Scotty.get "/login" (Lib.startOAuthFlow appEnv)
-  Scotty.get Lib.oauthCallbackPath (Lib.handleOAuthCallback appEnv)
+  Scotty.get TwitterO.oauthCallbackPath (Lib.handleOAuthCallback appEnv)
 
 main :: IO ()
 main = do
-  appEnv <- Lib.newAppEnv
+  appEnv <- TwitterO.newAppEnv
   putStrLn
-    ("Using client credentials: " ++ show (Lib.appEnvOAuthClientCred appEnv))
+    ("Using client credentials: " ++
+     show (TwitterO.appEnvOAuthClientCred appEnv))
   Scotty.scotty 5000 $ do
     Scotty.middleware logStdout
     Scotty.middleware Middle.justFavicon
