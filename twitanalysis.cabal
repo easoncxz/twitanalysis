@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8a8b200625593ee4111dd66a1ddb68d0cf6e997344046b61058f76225944e00d
+-- hash: c0658fe91663e7eb4910fd6ae3cad05cdf4d8e557dd7284526e430458718b970
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -28,6 +28,8 @@ source-repository head
 library
   exposed-modules:
       Lib
+      MiscWaiMiddleware
+      TwitterOAuthConsumer
   other-modules:
       Paths_twitanalysis
   hs-source-dirs:
