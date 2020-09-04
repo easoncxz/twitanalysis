@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c0658fe91663e7eb4910fd6ae3cad05cdf4d8e557dd7284526e430458718b970
+-- hash: bdb2b294be11c02f6bb3247fd04b94cb92a64579722797e3b79f5a07b27d56aa
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -27,9 +27,11 @@ source-repository head
 
 library
   exposed-modules:
+      ButlerDemo
       Lib
       MiscWaiMiddleware
       TwitterOAuthConsumer
+      Web.Scotty.Session
   other-modules:
       Paths_twitanalysis
   hs-source-dirs:
@@ -37,11 +39,12 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , base64-bytestring
     , blaze-html
     , blaze-markup
     , bytestring
     , containers
-    , cryptonite
+    , crypto-api
     , hspec
     , http-client
     , http-client-tls
@@ -51,7 +54,9 @@ library
     , scotty
     , stm
     , text
+    , time
     , twitter-types
+    , unordered-containers
     , wai
     , wai-extra
     , wai-middleware-static
@@ -67,11 +72,12 @@ executable twitanalysis-exe
   build-depends:
       aeson
     , base >=4.7 && <5
+    , base64-bytestring
     , blaze-html
     , blaze-markup
     , bytestring
     , containers
-    , cryptonite
+    , crypto-api
     , hspec
     , http-client
     , http-client-tls
@@ -81,8 +87,10 @@ executable twitanalysis-exe
     , scotty
     , stm
     , text
+    , time
     , twitanalysis
     , twitter-types
+    , unordered-containers
     , wai
     , wai-extra
     , wai-middleware-static
@@ -99,11 +107,12 @@ test-suite twitanalysis-test
   build-depends:
       aeson
     , base >=4.7 && <5
+    , base64-bytestring
     , blaze-html
     , blaze-markup
     , bytestring
     , containers
-    , cryptonite
+    , crypto-api
     , hspec
     , http-client
     , http-client-tls
@@ -113,8 +122,10 @@ test-suite twitanalysis-test
     , scotty
     , stm
     , text
+    , time
     , twitanalysis
     , twitter-types
+    , unordered-containers
     , wai
     , wai-extra
     , wai-middleware-static
