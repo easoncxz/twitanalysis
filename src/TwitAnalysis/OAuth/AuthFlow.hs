@@ -52,7 +52,7 @@ type RequestTokenCache = TVar (Map.Map BS.ByteString (Token Temporary))
 --
 -- A little Env that can be composed as part of a bigger Env somewhere else.
 data Env =
-  Env
+  UnsafeEnv
     { envRequestTokenCache :: RequestTokenCache
     , envHttpManager :: HttpClient.Manager
     , envClientCred :: Cred Client
@@ -67,7 +67,8 @@ newEnv envBaseUrl defHttpMan = do
     defHttpMan `elseDo` HttpClient.newManager Tls.tlsManagerSettings
   envClientCred <- newClientCred
   putStrLn ("Using client credentials: " ++ show envClientCred)
-  return Env {envRequestTokenCache, envHttpManager, envClientCred, envBaseUrl}
+  return
+    UnsafeEnv {envRequestTokenCache, envHttpManager, envClientCred, envBaseUrl}
   where
     newClientCred :: IO (OAuthCred.Cred OAuthCred.Client)
     newClientCred = do
@@ -142,11 +143,11 @@ startOAuthFlow' (man, clientCred, cache, selfServerBaseUrl) = do
       return (OAuthRedirectToAuthorisationPage url)
 
 startOAuthFlow :: Env -> Scotty.ActionM ()
-startOAuthFlow Env { envBaseUrl = base
-                   , envRequestTokenCache = cache
-                   , envClientCred = clientCred
-                   , envHttpManager = httpMan
-                   } =
+startOAuthFlow UnsafeEnv { envBaseUrl = base
+                         , envRequestTokenCache = cache
+                         , envClientCred = clientCred
+                         , envHttpManager = httpMan
+                         } =
   liftIO (startOAuthFlow' (httpMan, clientCred, cache, base)) >>= \case
     OAuthRequestTokenError bs -> Scotty.raw bs
     OAuthRedirectToAuthorisationPage url -> Scotty.redirect url
@@ -184,11 +185,11 @@ handleOAuthCallback' (httpMan, clientCred, cache, selfServerBaseUrl) (reqTokenKe
       Right token -> AccessTokenAcquired token
 
 handleOAuthCallback :: Env -> Scotty.ActionM ()
-handleOAuthCallback Env { envBaseUrl = base
-                        , envRequestTokenCache = cache
-                        , envClientCred = clientCred
-                        , envHttpManager = httpMan
-                        } = do
+handleOAuthCallback UnsafeEnv { envBaseUrl = base
+                              , envRequestTokenCache = cache
+                              , envClientCred = clientCred
+                              , envHttpManager = httpMan
+                              } = do
   reqTokenKey :: BS.ByteString <- Scotty.param "oauth_token"
   verifierBs :: BS.ByteString <- Scotty.param "oauth_verifier"
   result <-

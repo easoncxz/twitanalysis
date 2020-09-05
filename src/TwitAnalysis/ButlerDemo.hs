@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module TwitAnalysis.ButlerDemo where
 
@@ -17,6 +18,16 @@ import qualified Web.Scotty.Session as Session
 
 newtype MySessionType =
   MySessionType Text
+
+data Env =
+  UnsafeEnv
+    { envSessionMan :: Session.ScottySM MySessionType
+    }
+
+newEnv :: IO Env
+newEnv = do
+  envSessionMan <- Session.createSessionManager
+  return UnsafeEnv {envSessionMan}
 
 nameFieldName :: IsString s => s
 nameFieldName = "name-field"
@@ -66,10 +77,8 @@ forgetGuest sessionMan = do
   Session.modifySession sessionMan (const Nothing)
   Scotty.redirect butlerGetPath
 
--- | Needs a Session.ScottySM, which needs to be initialised at server-startup
--- time, but isn't part of AppEnv, because this module is just a demo.
-registerButlerRoutes :: Session.ScottySM MySessionType -> Scotty.ScottyM ()
-registerButlerRoutes sessionMan = do
+registerButlerRoutes :: Env -> Scotty.ScottyM ()
+registerButlerRoutes UnsafeEnv {envSessionMan = sessionMan} = do
   Scotty.get butlerGetPath (recogniseGuest sessionMan)
   Scotty.post butlerPostPath (registerGuest sessionMan)
   Scotty.post butlerPostPathLogout (forgetGuest sessionMan)

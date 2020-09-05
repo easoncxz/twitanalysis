@@ -3,11 +3,9 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
--- Very dubious module: it wants very badly to form circular-dependencies with
--- every other module.
 module TwitAnalysis.AppEnv
-  ( AppEnv(..)
-  , newAppEnv
+  ( Env(..)
+  , newEnv
   ) where
 
 import Control.Concurrent.STM (TVar)
@@ -27,28 +25,29 @@ import qualified Network.OAuth.Types.Credentials as OAuthCred
 import qualified System.Environment as Sys
 import qualified Text.Read as Read
 
+import qualified TwitAnalysis.ButlerDemo as Butler
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
 
--- Resist importing any TwitAnalysis application modules!
 import TwitAnalysis.Utils (mintercalate)
 
 -- | A hierarchical-composition of smaller Env types from various modules!
-data AppEnv =
-  AppEnv
-    { appEnvPort :: Int
-    , appEnvAuthEnv :: Auth.Env
+data Env =
+  Env
+    { envPort :: Int
+    , envAuthEnv :: Auth.Env
+    , envButlerEnv :: Butler.Env
     }
 
--- | TODO: RUNTIME_ENV documentation
-newAppEnv :: IO AppEnv
-newAppEnv = do
+newEnv :: IO Env
+newEnv = do
   let defaultPort = 5000
-  appEnvPort <-
+  envPort <-
     do maybeStr <- Sys.lookupEnv "PORT"
        return . Maybe.fromMaybe defaultPort $ do
          str <- maybeStr
          num <- Read.readMaybe str
          return num
-  let baseUrl = "http://localhost:" ++ show appEnvPort
-  appEnvAuthEnv <- Auth.newEnv baseUrl Nothing
-  return AppEnv {appEnvPort, appEnvAuthEnv}
+  let baseUrl = "http://localhost:" ++ show envPort
+  envAuthEnv <- Auth.newEnv baseUrl Nothing
+  envButlerEnv <- Butler.newEnv
+  return Env {envPort, envAuthEnv, envButlerEnv}
