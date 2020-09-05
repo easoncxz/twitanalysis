@@ -6,10 +6,11 @@
 -- | OAuth 1.0a Consumer authorisation flow to Twitter
 module TwitAnalysis.OAuth.AuthFlow
   ( Env -- opaque
+  , BaseUrl(..)
+  , OAuthCallbackPath(..)
   , newEnv
   , startOAuthFlow
   , handleOAuthCallback
-  , oauthCallbackPath
   ) where
 
 import Control.Concurrent.STM (TVar)
@@ -57,18 +58,32 @@ data Env =
     , envHttpManager :: HttpClient.Manager
     , envClientCred :: Cred Client
     , envBaseUrl :: String
+    , envCallbackPath :: String
+    , envThreeLegged :: OAuthThreeL.ThreeLegged
     }
 
--- | TODO: RUNTIME_ENV documentation
-newEnv :: String -> Maybe HttpClient.Manager -> IO Env
-newEnv envBaseUrl defHttpMan = do
+newtype BaseUrl =
+  BaseUrl String
+
+newtype OAuthCallbackPath =
+  OAuthCallbackPath String
+
+newEnv :: BaseUrl -> OAuthCallbackPath -> Maybe HttpClient.Manager -> IO Env
+newEnv (BaseUrl envBaseUrl) (OAuthCallbackPath envCallbackPath) defHttpMan = do
   envRequestTokenCache <- STM.atomically (STM.newTVar Map.empty)
   envHttpManager <-
     defHttpMan `elseDo` HttpClient.newManager Tls.tlsManagerSettings
   envClientCred <- newClientCred
   putStrLn ("Using client credentials: " ++ show envClientCred)
   return
-    UnsafeEnv {envRequestTokenCache, envHttpManager, envClientCred, envBaseUrl}
+    UnsafeEnv
+      { envRequestTokenCache
+      , envHttpManager
+      , envClientCred
+      , envBaseUrl
+      , envThreeLegged
+      , envCallbackPath
+      }
   where
     newClientCred :: IO (OAuthCred.Cred OAuthCred.Client)
     newClientCred = do
@@ -76,6 +91,19 @@ newEnv envBaseUrl defHttpMan = do
       secret <- Sys.getEnv "TWITTER_CONSUMER_SECRET"
       return $
         OAuthCred.clientCred (OAuthCred.Token (BS8.pack key) (BS8.pack secret))
+    -- | See Twitter docs here:
+    --
+    --    https://developer.twitter.com/en/docs/authentication/api-reference/request_token
+    --    https://developer.twitter.com/en/docs/authentication/api-reference/authorize
+    --    https://developer.twitter.com/en/docs/authentication/api-reference/access_token
+    envThreeLegged :: OAuthThreeL.ThreeLegged
+    envThreeLegged =
+      Maybe.fromJust $
+      OAuthThreeL.parseThreeLegged
+        "https://api.twitter.com/oauth/request_token"
+        "https://api.twitter.com/oauth/authorize"
+        "https://api.twitter.com/oauth/access_token"
+        (OAuthThreeL.Callback (fromString (envBaseUrl <> envCallbackPath)))
 
 -- | TODO: maybe add some expiry logic, like a delayed-deletion
 rememberRequestToken :: RequestTokenCache -> Token Temporary -> IO ()
@@ -84,23 +112,6 @@ rememberRequestToken cache tok =
 
 relativeUrl :: (IsString s, Monoid s) => s -> s
 relativeUrl = ("https://api.twitter.com/1.1/" <>)
-
-oauthCallbackPath :: IsString s => s
-oauthCallbackPath = "/oauth-callback"
-
--- | See Twitter docs here:
---
---    https://developer.twitter.com/en/docs/authentication/api-reference/request_token
---    https://developer.twitter.com/en/docs/authentication/api-reference/authorize
---    https://developer.twitter.com/en/docs/authentication/api-reference/access_token
-myThreeLegged :: String -> OAuthThreeL.ThreeLegged
-myThreeLegged selfServerBaseUrl =
-  Maybe.fromJust $
-  OAuthThreeL.parseThreeLegged
-    "https://api.twitter.com/oauth/request_token"
-    "https://api.twitter.com/oauth/authorize"
-    "https://api.twitter.com/oauth/access_token"
-    (OAuthThreeL.Callback (fromString (selfServerBaseUrl <> oauthCallbackPath)))
 
 myOAuthServer :: OAuthParams.Server
 myOAuthServer =
@@ -114,10 +125,13 @@ data StartOAuthFlowResult
   | OAuthRedirectToAuthorisationPage TextL.Text
 
 -- | Lower-level action
-startOAuthFlow' ::
-     (HttpClient.Manager, Cred Client, RequestTokenCache, String)
-  -> IO StartOAuthFlowResult
-startOAuthFlow' (man, clientCred, cache, selfServerBaseUrl) = do
+startOAuthFlow' :: Env -> IO StartOAuthFlowResult
+startOAuthFlow' UnsafeEnv { envBaseUrl = selfServerBaseUrl
+                          , envRequestTokenCache = cache
+                          , envClientCred = clientCred
+                          , envHttpManager = man
+                          , envThreeLegged
+                          } = do
   let apparentlyNecessary =
         myOAuthServer {OAuthParams.parameterMethod = OAuthParams.QueryString}
   eitherRequestToken <-
@@ -125,7 +139,7 @@ startOAuthFlow' (man, clientCred, cache, selfServerBaseUrl) = do
     OAuthThreeL.requestTemporaryToken
       clientCred
       apparentlyNecessary
-      (myThreeLegged selfServerBaseUrl)
+      envThreeLegged
       man
   case eitherRequestToken of
     Left bs -> do
@@ -137,18 +151,14 @@ startOAuthFlow' (man, clientCred, cache, selfServerBaseUrl) = do
       let authorizeUrl =
             OAuthThreeL.buildAuthorizationUrl
               (OAuthCred.temporaryCred reqToken clientCred)
-              (myThreeLegged selfServerBaseUrl)
+              envThreeLegged
           url = TextL.pack (show authorizeUrl)
       putStrLn ("Redirecting to URL: " ++ show url)
       return (OAuthRedirectToAuthorisationPage url)
 
 startOAuthFlow :: Env -> Scotty.ActionM ()
-startOAuthFlow UnsafeEnv { envBaseUrl = base
-                         , envRequestTokenCache = cache
-                         , envClientCred = clientCred
-                         , envHttpManager = httpMan
-                         } =
-  liftIO (startOAuthFlow' (httpMan, clientCred, cache, base)) >>= \case
+startOAuthFlow env =
+  liftIO (startOAuthFlow' env) >>= \case
     OAuthRequestTokenError bs -> Scotty.raw bs
     OAuthRedirectToAuthorisationPage url -> Scotty.redirect url
 
@@ -158,10 +168,15 @@ data ExchangeAccessTokenResult
 
 -- | Lower-level action
 handleOAuthCallback' ::
-     (HttpClient.Manager, Cred Client, RequestTokenCache, String)
+     Env
   -> (OAuthCred.Key, OAuthThreeL.Verifier)
   -> IO ExchangeAccessTokenResult
-handleOAuthCallback' (httpMan, clientCred, cache, selfServerBaseUrl) (reqTokenKey, verifierBs) = do
+handleOAuthCallback' UnsafeEnv { envBaseUrl = selfServerBaseUrl
+                               , envRequestTokenCache = cache
+                               , envClientCred = clientCred
+                               , envHttpManager = httpMan
+                               , envThreeLegged
+                               } (reqTokenKey, verifierBs) = do
   reqToken :: Token Temporary <-
     liftIO $ do
       maybeToken <-
@@ -177,7 +192,7 @@ handleOAuthCallback' (httpMan, clientCred, cache, selfServerBaseUrl) (reqTokenKe
          (OAuthCred.temporaryCred reqToken clientCred)
          myOAuthServer
          verifierBs
-         (myThreeLegged selfServerBaseUrl)
+         envThreeLegged
          httpMan)
   return $
     case HttpClient.responseBody result of
@@ -185,18 +200,10 @@ handleOAuthCallback' (httpMan, clientCred, cache, selfServerBaseUrl) (reqTokenKe
       Right token -> AccessTokenAcquired token
 
 handleOAuthCallback :: Env -> Scotty.ActionM ()
-handleOAuthCallback UnsafeEnv { envBaseUrl = base
-                              , envRequestTokenCache = cache
-                              , envClientCred = clientCred
-                              , envHttpManager = httpMan
-                              } = do
+handleOAuthCallback env = do
   reqTokenKey :: BS.ByteString <- Scotty.param "oauth_token"
   verifierBs :: BS.ByteString <- Scotty.param "oauth_verifier"
-  result <-
-    liftIO $
-    handleOAuthCallback'
-      (httpMan, clientCred, cache, base)
-      (reqTokenKey, verifierBs)
+  result <- liftIO $ handleOAuthCallback' env (reqTokenKey, verifierBs)
   case result of
     AccessTokenDenied lbs -> do
       liftIO $ do

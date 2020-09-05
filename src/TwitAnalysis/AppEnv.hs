@@ -36,6 +36,7 @@ data Env =
     { envPort :: Int
     , envAuthEnv :: Auth.Env
     , envButlerEnv :: Butler.Env
+    , envOAuthCallbackPath :: String
     }
 
 newEnv :: IO Env
@@ -48,6 +49,11 @@ newEnv = do
          num <- Read.readMaybe str
          return num
   let baseUrl = "http://localhost:" ++ show envPort
-  envAuthEnv <- Auth.newEnv baseUrl Nothing
+  let envOAuthCallbackPath = "/oauth-callback"
+  envAuthEnv <-
+    Auth.newEnv
+      (Auth.BaseUrl baseUrl)
+      (Auth.OAuthCallbackPath envOAuthCallbackPath)
+      Nothing
   envButlerEnv <- Butler.newEnv
-  return Env {envPort, envAuthEnv, envButlerEnv}
+  return Env {envPort, envAuthEnv, envButlerEnv, envOAuthCallbackPath}

@@ -3,6 +3,7 @@
 
 module TwitAnalysis.ScottyApp where
 
+import Data.String (fromString)
 import Network.Wai.Middleware.RequestLogger (logStdout)
 import qualified Web.Scotty as Scotty
 import qualified Web.Scotty.Session as Session
@@ -13,11 +14,11 @@ import qualified TwitAnalysis.MiscWaiMiddleware as Middle
 import qualified TwitAnalysis.OAuth.AuthFlow as AuthFlow
 
 scottyApp :: Env -> Scotty.ScottyM ()
-scottyApp Env {envAuthEnv, envButlerEnv} = do
+scottyApp Env {envAuthEnv, envButlerEnv, envOAuthCallbackPath} = do
   Scotty.get "/" (Scotty.redirect "/index.html") -- go to static dir
   Scotty.get "/login" (AuthFlow.startOAuthFlow envAuthEnv)
   Scotty.get
-    AuthFlow.oauthCallbackPath
+    (fromString envOAuthCallbackPath)
     (AuthFlow.handleOAuthCallback envAuthEnv)
   Butler.registerButlerRoutes envButlerEnv
 
