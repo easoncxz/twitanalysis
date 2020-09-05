@@ -65,3 +65,11 @@ forgetGuest :: Session.ScottySM MySessionType -> Scotty.ActionM ()
 forgetGuest sessionMan = do
   Session.modifySession sessionMan (const Nothing)
   Scotty.redirect butlerGetPath
+
+-- | Needs a Session.ScottySM, which needs to be initialised at server-startup
+-- time, but isn't part of AppEnv, because this module is just a demo.
+registerButlerRoutes :: Session.ScottySM MySessionType -> Scotty.ScottyM ()
+registerButlerRoutes sessionMan = do
+  Scotty.get butlerGetPath (recogniseGuest sessionMan)
+  Scotty.post butlerPostPath (registerGuest sessionMan)
+  Scotty.post butlerPostPathLogout (forgetGuest sessionMan)
