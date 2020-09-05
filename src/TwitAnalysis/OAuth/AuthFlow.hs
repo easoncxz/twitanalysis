@@ -8,9 +8,11 @@ module TwitAnalysis.OAuth.AuthFlow
   ( Env -- opaque
   , BaseUrl(..)
   , OAuthCallbackPath(..)
+  , StartOAuthFlowResult(..)
+  , ExchangeAccessTokenResult(..)
   , newEnv
-  , startOAuthFlow
-  , handleOAuthCallback
+  , startOAuthFlow'
+  , handleOAuthCallback'
   ) where
 
 import Control.Concurrent.STM (TVar)
@@ -19,14 +21,11 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Lazy.Char8 as BSL8
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import Data.Monoid (Monoid, (<>), mconcat)
 import Data.String (IsString, fromString)
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as TextL
 import qualified Data.Text.Lazy as TL
 import Lens.Micro ((^.))
 import qualified Network.HTTP.Client as HttpClient
@@ -122,7 +121,7 @@ myOAuthServer =
 
 data StartOAuthFlowResult
   = OAuthRequestTokenError BSL.ByteString
-  | OAuthRedirectToAuthorisationPage TextL.Text
+  | OAuthRedirectToAuthorisationPage TL.Text
 
 -- | Lower-level action
 startOAuthFlow' :: Env -> IO StartOAuthFlowResult
@@ -152,15 +151,9 @@ startOAuthFlow' UnsafeEnv { envBaseUrl = selfServerBaseUrl
             OAuthThreeL.buildAuthorizationUrl
               (OAuthCred.temporaryCred reqToken clientCred)
               envThreeLegged
-          url = TextL.pack (show authorizeUrl)
+          url = TL.pack (show authorizeUrl)
       putStrLn ("Redirecting to URL: " ++ show url)
       return (OAuthRedirectToAuthorisationPage url)
-
-startOAuthFlow :: Env -> Scotty.ActionM ()
-startOAuthFlow env =
-  liftIO (startOAuthFlow' env) >>= \case
-    OAuthRequestTokenError bs -> Scotty.raw bs
-    OAuthRedirectToAuthorisationPage url -> Scotty.redirect url
 
 data ExchangeAccessTokenResult
   = AccessTokenDenied BSL.ByteString
@@ -198,31 +191,3 @@ handleOAuthCallback' UnsafeEnv { envBaseUrl = selfServerBaseUrl
     case HttpClient.responseBody result of
       Left bs -> AccessTokenDenied bs
       Right token -> AccessTokenAcquired token
-
-handleOAuthCallback :: Env -> Scotty.ActionM ()
-handleOAuthCallback env = do
-  reqTokenKey :: BS.ByteString <- Scotty.param "oauth_token"
-  verifierBs :: BS.ByteString <- Scotty.param "oauth_verifier"
-  result <- liftIO $ handleOAuthCallback' env (reqTokenKey, verifierBs)
-  case result of
-    AccessTokenDenied lbs -> do
-      liftIO $ do
-        putStrLn
-          ("Failed to swap request token for access token. Request body printed below.")
-        BSL8.putStrLn lbs
-      let msg :: IsString s => s
-          msg = "Failed to obtain access token."
-      Scotty.status Http.status401 {Http.statusMessage = msg}
-      Scotty.html msg
-    AccessTokenAcquired token -> do
-      let OAuthCred.Token accTokenKey _ = token
-      liftIO
-        (putStrLn ("Successfully received access token: " ++ show accTokenKey))
-      Scotty.html $
-        mintercalate
-          "\n"
-          [ "Here is your access token: "
-          , "<pre>"
-          , TL.pack (show token)
-          , "</pre>"
-          ]

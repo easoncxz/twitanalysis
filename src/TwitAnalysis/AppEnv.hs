@@ -26,6 +26,7 @@ import qualified System.Environment as Sys
 import qualified Text.Read as Read
 
 import qualified TwitAnalysis.ButlerDemo as Butler
+import qualified TwitAnalysis.LoginFlow as Login
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
 
 import TwitAnalysis.Utils (mintercalate)
@@ -34,9 +35,12 @@ import TwitAnalysis.Utils (mintercalate)
 data Env =
   Env
     { envPort :: Int
+    , envLoginEnv :: Login.Env
     , envAuthEnv :: Auth.Env
     , envButlerEnv :: Butler.Env
     , envOAuthCallbackPath :: String
+    , envHomePagePath :: String
+    , envLoginPath :: String
     }
 
 newEnv :: IO Env
@@ -50,10 +54,22 @@ newEnv = do
          return num
   let baseUrl = "http://localhost:" ++ show envPort
   let envOAuthCallbackPath = "/oauth-callback"
+      envHomePagePath = "/home"
+      envLoginPath = "/login"
   envAuthEnv <-
     Auth.newEnv
       (Auth.BaseUrl baseUrl)
       (Auth.OAuthCallbackPath envOAuthCallbackPath)
       Nothing
   envButlerEnv <- Butler.newEnv
-  return Env {envPort, envAuthEnv, envButlerEnv, envOAuthCallbackPath}
+  envLoginEnv <- Login.newEnv
+  return
+    Env
+      { envPort
+      , envAuthEnv
+      , envButlerEnv
+      , envOAuthCallbackPath
+      , envLoginEnv
+      , envHomePagePath
+      , envLoginPath
+      }

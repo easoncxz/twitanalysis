@@ -10,17 +10,28 @@ import qualified Web.Scotty.Session as Session
 
 import TwitAnalysis.AppEnv (Env(..), newEnv)
 import qualified TwitAnalysis.ButlerDemo as Butler
+import qualified TwitAnalysis.LoginFlow as LoginFlow
 import qualified TwitAnalysis.MiscWaiMiddleware as Middle
-import qualified TwitAnalysis.OAuth.AuthFlow as AuthFlow
 
 scottyApp :: Env -> Scotty.ScottyM ()
-scottyApp Env {envAuthEnv, envButlerEnv, envOAuthCallbackPath} = do
+scottyApp Env { envAuthEnv
+              , envButlerEnv
+              , envOAuthCallbackPath
+              , envLoginEnv
+              , envHomePagePath
+              , envLoginPath
+              } = do
   Scotty.get "/" (Scotty.redirect "/index.html") -- go to static dir
-  Scotty.get "/login" (AuthFlow.startOAuthFlow envAuthEnv)
   Scotty.get
-    (fromString envOAuthCallbackPath)
-    (AuthFlow.handleOAuthCallback envAuthEnv)
+    (s envLoginPath)
+    (LoginFlow.viewLogin envLoginEnv envAuthEnv envHomePagePath)
+  Scotty.get
+    (s envOAuthCallbackPath)
+    (LoginFlow.handleOAuthCallback envLoginEnv envAuthEnv envHomePagePath)
+  Scotty.get (s envHomePagePath) (LoginFlow.viewHome envLoginPath envLoginEnv)
   Butler.registerButlerRoutes envButlerEnv
+  where
+    s = fromString
 
 -- | Start the server
 startServer :: IO ()
