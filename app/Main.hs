@@ -12,10 +12,9 @@ import qualified MiscWaiMiddleware as Middle
 import qualified TwitterOAuthConsumer as TwitterO
 
 scottyApp ::
-     TwitterO.AppEnv
-  -> Session.ScottySM Butler.MySessionType
-  -> Scotty.ScottyM ()
+     Lib.AppEnv -> Session.ScottySM Butler.MySessionType -> Scotty.ScottyM ()
 scottyApp appEnv sessionMan = do
+  Scotty.get "/" (Scotty.redirect "/index.html") -- go to static dir
   Scotty.get "/login" (Lib.startOAuthFlow appEnv)
   Scotty.get TwitterO.oauthCallbackPath (Lib.handleOAuthCallback appEnv)
   Scotty.get Butler.butlerGetPath (Butler.recogniseGuest sessionMan)
@@ -24,12 +23,9 @@ scottyApp appEnv sessionMan = do
 
 main :: IO ()
 main = do
-  appEnv <- TwitterO.newAppEnv
+  appEnv@Lib.AppEnv {Lib.appEnvSelfServerPort = port} <- Lib.newAppEnv
   sessionMan <- Session.createSessionManager
-  putStrLn
-    ("Using client credentials: " ++
-     show (TwitterO.appEnvOAuthClientCred appEnv))
-  Scotty.scotty 5000 $ do
+  Scotty.scotty port $ do
     Scotty.middleware logStdout
     Scotty.middleware Middle.justFavicon
     Scotty.middleware Middle.myStaticMiddleware
