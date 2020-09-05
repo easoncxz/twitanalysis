@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 -- Very dubious module: it wants very badly to form circular-dependencies with
 -- every other module.
@@ -26,46 +27,28 @@ import qualified Network.OAuth.Types.Credentials as OAuthCred
 import qualified System.Environment as Sys
 import qualified Text.Read as Read
 
+import qualified TwitAnalysis.OAuth.AuthFlow as Auth
+
 -- Resist importing any TwitAnalysis application modules!
 import TwitAnalysis.Utils (mintercalate)
 
-type RequestTokenCache
-   = TVar (Map.Map BS.ByteString (OAuthCred.Token OAuthCred.Temporary))
-
+-- | A hierarchical-composition of smaller Env types from various modules!
 data AppEnv =
   AppEnv
-    { appEnvHttpManager :: HttpClient.Manager
-    , appEnvOAuthClientCred :: OAuthCred.Cred OAuthCred.Client
-    , appEnvRequestTokenCache :: RequestTokenCache
-    , appEnvSelfServerBaseUrl :: String
-    , appEnvSelfServerPort :: Int
+    { appEnvPort :: Int
+    , appEnvAuthEnv :: Auth.Env
     }
-
--- | TODO: RUNTIME_ENV documentation
-newClientCred :: IO (OAuthCred.Cred OAuthCred.Client)
-newClientCred = do
-  key <- Sys.getEnv "TWITTER_CONSUMER_KEY"
-  secret <- Sys.getEnv "TWITTER_CONSUMER_SECRET"
-  return $
-    OAuthCred.clientCred (OAuthCred.Token (BS8.pack key) (BS8.pack secret))
-
-newRequestTokenCache :: IO RequestTokenCache
-newRequestTokenCache = STM.atomically (STM.newTVar Map.empty)
 
 -- | TODO: RUNTIME_ENV documentation
 newAppEnv :: IO AppEnv
 newAppEnv = do
-  tlsMan <- HttpClient.newManager Tls.tlsManagerSettings
-  clientCred <- newClientCred
-  cache <- newRequestTokenCache
-  putStrLn ("Using client credentials: " ++ show clientCred)
   let defaultPort = 5000
-  port <-
+  appEnvPort <-
     do maybeStr <- Sys.lookupEnv "PORT"
        return . Maybe.fromMaybe defaultPort $ do
          str <- maybeStr
          num <- Read.readMaybe str
          return num
-  let base = "http://localhost:" ++ show port
-  putStrLn ("I understand that I am running at this URL: " ++ base)
-  return (AppEnv tlsMan clientCred cache base port)
+  let baseUrl = "http://localhost:" ++ show appEnvPort
+  appEnvAuthEnv <- Auth.newEnv baseUrl Nothing
+  return AppEnv {appEnvPort, appEnvAuthEnv}

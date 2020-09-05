@@ -1,10 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 -- | OAuth 1.0a Consumer authorisation flow to Twitter
 module TwitAnalysis.OAuth.AuthFlow
-  ( startOAuthFlow
+  ( Env -- opaque
+  , newEnv
+  , startOAuthFlow
   , handleOAuthCallback
   , oauthCallbackPath
   ) where
@@ -26,21 +29,55 @@ import qualified Data.Text.Lazy as TextL
 import qualified Data.Text.Lazy as TL
 import Lens.Micro ((^.))
 import qualified Network.HTTP.Client as HttpClient
+import qualified Network.HTTP.Client.TLS as Tls
 import qualified Network.HTTP.Types.Status as Http
 import qualified Network.OAuth.ThreeLegged as OAuthThreeL
+import Network.OAuth.Types.Credentials
+  ( Client
+  , Cred
+  , Permanent
+  , Temporary
+  , Token(Token)
+  )
 import qualified Network.OAuth.Types.Credentials as OAuthCred
 import qualified Network.OAuth.Types.Params as OAuthParams
+import qualified System.Environment as Sys
 import qualified Web.Scotty as Scotty
 
-import TwitAnalysis.AppEnv (AppEnv(..))
-import TwitAnalysis.Utils (mintercalate)
+import TwitAnalysis.Utils (elseDo, mintercalate)
 
-type RequestTokenCache
-   = TVar (Map.Map BS.ByteString (OAuthCred.Token OAuthCred.Temporary))
+type RequestTokenCache = TVar (Map.Map BS.ByteString (Token Temporary))
+
+-- | Modular programming!
+--
+-- A little Env that can be composed as part of a bigger Env somewhere else.
+data Env =
+  Env
+    { envRequestTokenCache :: RequestTokenCache
+    , envHttpManager :: HttpClient.Manager
+    , envClientCred :: Cred Client
+    , envBaseUrl :: String
+    }
+
+-- | TODO: RUNTIME_ENV documentation
+newEnv :: String -> Maybe HttpClient.Manager -> IO Env
+newEnv envBaseUrl defHttpMan = do
+  envRequestTokenCache <- STM.atomically (STM.newTVar Map.empty)
+  envHttpManager <-
+    defHttpMan `elseDo` HttpClient.newManager Tls.tlsManagerSettings
+  envClientCred <- newClientCred
+  putStrLn ("Using client credentials: " ++ show envClientCred)
+  return Env {envRequestTokenCache, envHttpManager, envClientCred, envBaseUrl}
+  where
+    newClientCred :: IO (OAuthCred.Cred OAuthCred.Client)
+    newClientCred = do
+      key <- Sys.getEnv "TWITTER_CONSUMER_KEY"
+      secret <- Sys.getEnv "TWITTER_CONSUMER_SECRET"
+      return $
+        OAuthCred.clientCred (OAuthCred.Token (BS8.pack key) (BS8.pack secret))
 
 -- | TODO: maybe add some expiry logic, like a delayed-deletion
-rememberRequestToken ::
-     RequestTokenCache -> OAuthCred.Token OAuthCred.Temporary -> IO ()
+rememberRequestToken :: RequestTokenCache -> Token Temporary -> IO ()
 rememberRequestToken cache tok =
   STM.atomically . STM.modifyTVar' cache $ Map.insert (tok ^. OAuthCred.key) tok
 
@@ -77,10 +114,7 @@ data StartOAuthFlowResult
 
 -- | Lower-level action
 startOAuthFlow' ::
-     ( HttpClient.Manager
-     , OAuthCred.Cred OAuthCred.Client
-     , RequestTokenCache
-     , String)
+     (HttpClient.Manager, Cred Client, RequestTokenCache, String)
   -> IO StartOAuthFlowResult
 startOAuthFlow' (man, clientCred, cache, selfServerBaseUrl) = do
   let apparentlyNecessary =
@@ -107,30 +141,27 @@ startOAuthFlow' (man, clientCred, cache, selfServerBaseUrl) = do
       putStrLn ("Redirecting to URL: " ++ show url)
       return (OAuthRedirectToAuthorisationPage url)
 
-startOAuthFlow :: AppEnv -> Scotty.ActionM ()
-startOAuthFlow AppEnv { appEnvSelfServerBaseUrl = base
-                      , appEnvRequestTokenCache = cache
-                      , appEnvOAuthClientCred = clientCred
-                      , appEnvHttpManager = httpMan
-                      } =
+startOAuthFlow :: Env -> Scotty.ActionM ()
+startOAuthFlow Env { envBaseUrl = base
+                   , envRequestTokenCache = cache
+                   , envClientCred = clientCred
+                   , envHttpManager = httpMan
+                   } =
   liftIO (startOAuthFlow' (httpMan, clientCred, cache, base)) >>= \case
     OAuthRequestTokenError bs -> Scotty.raw bs
     OAuthRedirectToAuthorisationPage url -> Scotty.redirect url
 
 data ExchangeAccessTokenResult
   = AccessTokenDenied BSL.ByteString
-  | AccessTokenAcquired (OAuthCred.Token OAuthCred.Permanent)
+  | AccessTokenAcquired (Token Permanent)
 
 -- | Lower-level action
 handleOAuthCallback' ::
-     ( HttpClient.Manager
-     , OAuthCred.Cred OAuthCred.Client
-     , RequestTokenCache
-     , String)
+     (HttpClient.Manager, Cred Client, RequestTokenCache, String)
   -> (OAuthCred.Key, OAuthThreeL.Verifier)
   -> IO ExchangeAccessTokenResult
 handleOAuthCallback' (httpMan, clientCred, cache, selfServerBaseUrl) (reqTokenKey, verifierBs) = do
-  reqToken :: OAuthCred.Token OAuthCred.Temporary <-
+  reqToken :: Token Temporary <-
     liftIO $ do
       maybeToken <-
         STM.atomically $ do
@@ -152,12 +183,12 @@ handleOAuthCallback' (httpMan, clientCred, cache, selfServerBaseUrl) (reqTokenKe
       Left bs -> AccessTokenDenied bs
       Right token -> AccessTokenAcquired token
 
-handleOAuthCallback :: AppEnv -> Scotty.ActionM ()
-handleOAuthCallback AppEnv { appEnvSelfServerBaseUrl = base
-                           , appEnvRequestTokenCache = cache
-                           , appEnvOAuthClientCred = clientCred
-                           , appEnvHttpManager = httpMan
-                           } = do
+handleOAuthCallback :: Env -> Scotty.ActionM ()
+handleOAuthCallback Env { envBaseUrl = base
+                        , envRequestTokenCache = cache
+                        , envClientCred = clientCred
+                        , envHttpManager = httpMan
+                        } = do
   reqTokenKey :: BS.ByteString <- Scotty.param "oauth_token"
   verifierBs :: BS.ByteString <- Scotty.param "oauth_verifier"
   result <-
