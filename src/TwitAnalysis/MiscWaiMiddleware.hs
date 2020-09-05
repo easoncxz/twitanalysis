@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module MiscWaiMiddleware where
+module TwitAnalysis.MiscWaiMiddleware where
 
 import qualified Data.ByteString.Char8 as BS8
 import Data.Monoid ((<>))

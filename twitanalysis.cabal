@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b3d67db7b201e88cc502a539f8e639406c5fcdbc2d8976afc23def331198f48d
+-- hash: 40f9beef6093263c6f6c2e22ccfbc5f1f8a5a44927ff21784876bfd9cb137ace
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -27,12 +27,13 @@ source-repository head
 
 library
   exposed-modules:
-      ButlerDemo
-      Lib
-      MiscWaiMiddleware
       Network.OAuth.ThreeLegged.Patched
-      TwitterOAuthConsumer
-      Utils
+      TwitAnalysis.AppEnv
+      TwitAnalysis.ButlerDemo
+      TwitAnalysis.MiscWaiMiddleware
+      TwitAnalysis.OAuth.AuthFlow
+      TwitAnalysis.ScottyApp
+      TwitAnalysis.Utils
       Web.Scotty.Session
   other-modules:
       Paths_twitanalysis

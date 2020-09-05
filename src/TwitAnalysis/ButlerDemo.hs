@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module ButlerDemo where
+module TwitAnalysis.ButlerDemo where
 
 import Prelude hiding (div, head, id)
 

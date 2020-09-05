@@ -1,4 +1,6 @@
-module Utils where
+module TwitAnalysis.Utils
+  ( mintercalate
+  ) where
 
 import qualified Data.List as List
 import Data.Monoid (Monoid, mconcat)
