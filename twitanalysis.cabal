@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3746da99f8ca9ce1a9d0c69f51afa04e9f3015af4328d87953202ae8876704cc
+-- hash: 29c3e9161f9e4aa6d583b4c8b7a01e280b2f5e5f5225a89e093ae1cc22358b3b
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
       TwitAnalysis.OAuth.AuthFlow
       TwitAnalysis.OAuth.Signing
       TwitAnalysis.ScottyApp
+      TwitAnalysis.TwitterApiCallDemo
       TwitAnalysis.Utils
       Web.Scotty.Session
   other-modules:
@@ -43,6 +44,7 @@ library
       src
   build-depends:
       aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , base64-bytestring
     , blaze-html
@@ -76,6 +78,7 @@ executable twitanalysis-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , base64-bytestring
     , blaze-html
@@ -111,6 +114,7 @@ test-suite twitanalysis-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
+    , aeson-pretty
     , base >=4.7 && <5
     , base64-bytestring
     , blaze-html

@@ -5,7 +5,7 @@
 
 -- | OAuth 1.0a Consumer authorisation flow to Twitter
 module TwitAnalysis.OAuth.AuthFlow
-  ( Env -- opaque
+  ( Env(envClientCred, envHttpManager) -- opaque-ish
   , BaseUrl(..)
   , OAuthCallbackPath(..)
   , StartOAuthFlowResult(..)
@@ -13,6 +13,7 @@ module TwitAnalysis.OAuth.AuthFlow
   , newEnv
   , startOAuthFlow'
   , handleOAuthCallback'
+  , myOAuthServer
   ) where
 
 import Control.Concurrent.STM (TVar)
@@ -30,7 +31,6 @@ import qualified Data.Text.Lazy as TL
 import Lens.Micro ((^.))
 import qualified Network.HTTP.Client as HttpClient
 import qualified Network.HTTP.Client.TLS as Tls
-import qualified Network.HTTP.Types.Status as Http
 import qualified Network.OAuth.ThreeLegged as OAuthThreeL
 import Network.OAuth.Types.Credentials
   ( Client

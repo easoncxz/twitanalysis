@@ -12,6 +12,8 @@ import TwitAnalysis.AppEnv (Env(..), newEnv)
 import qualified TwitAnalysis.ButlerDemo as Butler
 import qualified TwitAnalysis.LoginFlow as LoginFlow
 import qualified TwitAnalysis.MiscWaiMiddleware as Middle
+import qualified TwitAnalysis.OAuth.AuthFlow as Auth
+import qualified TwitAnalysis.TwitterApiCallDemo as ApiDemo
 
 scottyApp :: Env -> Scotty.ScottyM ()
 scottyApp Env { envAuthEnv
@@ -30,6 +32,13 @@ scottyApp Env { envAuthEnv
     (LoginFlow.handleOAuthCallback envLoginEnv envAuthEnv envHomePagePath)
   Scotty.get (s envHomePagePath) (LoginFlow.viewHome envLoginPath envLoginEnv)
   Butler.registerButlerRoutes envButlerEnv
+  Scotty.get
+    "/whoami"
+    (ApiDemo.handleCurrentUser
+       (ApiDemo.Env (Auth.envHttpManager envAuthEnv))
+       envAuthEnv
+       envLoginEnv
+       envLoginPath)
   where
     s = fromString
 
