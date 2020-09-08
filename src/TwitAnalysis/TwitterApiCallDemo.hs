@@ -4,11 +4,13 @@
 
 module TwitAnalysis.TwitterApiCallDemo where
 
+import Control.Applicative ((<|>))
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Encode.Pretty as AP
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.List as List
 import Data.String (fromString)
 import qualified Data.Text.Lazy.Encoding as TL
 import qualified Network.HTTP.Client as HC
@@ -54,6 +56,13 @@ fetchCurrentUser Env {envHttpMan} cred srv = do
           ]
           initReq
   signedReq <- OAuthSigning.oauth cred srv unsignedReq
+  putStrLn $ "About to make this request: " ++ show signedReq
+  let headers = (HC.requestHeaders signedReq)
+  putStrLn $ "In particular, the headers are: " ++ show headers
+  let authHeader =
+        List.lookup "Authorization" headers <|>
+        List.lookup "authorization" headers
+  putStrLn $ "The Authorization header is: " ++ show authHeader
   withResponseLbs signedReq envHttpMan $ \lbs -> do
     case A.decode lbs of
       Nothing -> fail "Failed to decode response from Twitter API as JSON"
@@ -75,8 +84,10 @@ handleCurrentUser env authEnv loginEnv loginPath = do
   case maybeAccessToken of
     Nothing -> Scotty.redirect (fromString loginPath)
     Just accessToken -> do
+      liftIO . putStrLn $ "Using this access token: " ++ show accessToken
       let accessCred :: Cred Permanent =
             OAuthCred.permanentCred accessToken (Auth.envClientCred authEnv)
+      liftIO . putStrLn $ "Using this access cred: " ++ show accessCred
       json :: A.Value <-
         liftIO $ fetchCurrentUser env accessCred Auth.myOAuthServer
       Scotty.html . BlazeT.renderHtml $ viewUser json
