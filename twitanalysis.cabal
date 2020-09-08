@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6a59a1521e17d68ba21e3c10a6150af830700b8c9f0d0ad62995cad6308b2bc5
+-- hash: 3746da99f8ca9ce1a9d0c69f51afa04e9f3015af4328d87953202ae8876704cc
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       TwitAnalysis.LoginFlow
       TwitAnalysis.MiscWaiMiddleware
       TwitAnalysis.OAuth.AuthFlow
+      TwitAnalysis.OAuth.Signing
       TwitAnalysis.ScottyApp
       TwitAnalysis.Utils
       Web.Scotty.Session
@@ -48,7 +49,7 @@ library
     , blaze-markup
     , bytestring
     , containers
-    , crypto-api
+    , cryptonite
     , hspec
     , http-client
     , http-client-tls
@@ -81,7 +82,7 @@ executable twitanalysis-exe
     , blaze-markup
     , bytestring
     , containers
-    , crypto-api
+    , cryptonite
     , hspec
     , http-client
     , http-client-tls
@@ -116,7 +117,7 @@ test-suite twitanalysis-test
     , blaze-markup
     , bytestring
     , containers
-    , crypto-api
+    , cryptonite
     , hspec
     , http-client
     , http-client-tls

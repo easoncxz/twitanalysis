@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- | Copyright 2014 Alexander Thiemann
 --
@@ -29,8 +31,14 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TEnc
 import qualified Data.Text.Lazy as TL
 
-import Crypto.Random (SystemRandom, genBytes, newGenIO)
-import Crypto.Types (ByteLength)
+-- | crypto-api modules:
+-- import Crypto.Random (SystemRandom, genBytes, newGenIO)
+-- import Crypto.Types (ByteLength)
+--
+-- replace with cryptonite functions that look equivalent:
+import Crypto.Random.Types (getRandomBytes)
+
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64 as B64
 
 import Network.Wai
@@ -95,21 +103,16 @@ readSession' (ScottySM storage) fun = do
 sessionTTL :: NominalDiffTime
 sessionTTL = 36000 -- in seconds
 
-sessionIdEntropy :: ByteLength
+-- Typed as the Int-alias `ByteLength` if using crypto-api modules
+sessionIdEntropy :: Int
 sessionIdEntropy = 12
 
 createSession :: IO (Session a)
 createSession = do
-  gen <- g
-  sid <-
-    case genBytes sessionIdEntropy gen of
-      Left err -> fail $ show err
-      Right (x, _) -> return $ TEnc.decodeUtf8 $ B64.encode x
+  sid <- TEnc.decodeUtf8 . B64.encode <$> getRandomBytes sessionIdEntropy
   now <- getCurrentTime
   let validUntil = addUTCTime sessionTTL now
   return $ Session sid validUntil Nothing
-  where
-    g = newGenIO :: IO SystemRandom
 
 insertSession :: Session a -> SessionJar a -> IO ()
 insertSession sess sessions =
