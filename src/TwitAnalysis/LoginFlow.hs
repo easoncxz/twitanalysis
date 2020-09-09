@@ -4,7 +4,14 @@
 {-# LANGUAGE LambdaCase #-}
 
 -- | Like ButlerDemo, but the real deal
-module TwitAnalysis.LoginFlow where
+module TwitAnalysis.LoginFlow
+  ( Env
+  , newEnv
+  , handleOAuthCallback
+  , viewLogin
+  , viewHome
+  , sessionAccessToken
+  ) where
 
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
@@ -42,6 +49,10 @@ newEnv :: IO Env
 newEnv = do
   envSessionMan <- Session.createSessionManager
   return UnsafeEnv {envSessionMan}
+
+sessionAccessToken :: Env -> Scotty.ActionM (Maybe (Token Permanent))
+sessionAccessToken UnsafeEnv {envSessionMan} =
+  (fmap . fmap) userSessionAccessToken (Session.readSession envSessionMan)
 
 viewLogin :: Env -> Auth.Env -> String -> Scotty.ActionM ()
 viewLogin UnsafeEnv {envSessionMan} authEnv homePagePath = do

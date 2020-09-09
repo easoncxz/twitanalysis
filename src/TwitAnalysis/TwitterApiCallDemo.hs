@@ -2,7 +2,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module TwitAnalysis.TwitterApiCallDemo where
+module TwitAnalysis.TwitterApiCallDemo
+  ( Env
+  , newEnv
+  , handleCurrentUser
+  ) where
 
 import Control.Applicative ((<|>))
 import Control.Monad.IO.Class (liftIO)
@@ -32,9 +36,12 @@ import qualified TwitAnalysis.OAuth.Signing as Signing
 import TwitAnalysis.Utils (mintercalate)
 
 data Env =
-  Env
+  UnsafeEnv
     { envHttpMan :: HC.Manager
     }
+
+newEnv :: HC.Manager -> IO Env
+newEnv envHttpMan = return (UnsafeEnv {envHttpMan})
 
 -- | Help... gather everything into one BSL.ByteString ...
 withResponseLbs :: HC.Request -> HC.Manager -> (BSL.ByteString -> IO a) -> IO a
@@ -45,7 +52,7 @@ withResponseLbs req man cont =
 
 -- | Early-half of request handling
 fetchCurrentUser :: Env -> Cred Permanent -> OAuthParams.Server -> IO A.Value
-fetchCurrentUser Env {envHttpMan} cred srv = do
+fetchCurrentUser UnsafeEnv {envHttpMan} cred srv = do
   initReq <-
     HC.parseRequest
       "GET https://api.twitter.com/1.1/account/verify_credentials.json"
@@ -80,10 +87,7 @@ viewUser json = do
 
 handleCurrentUser :: Env -> Auth.Env -> Login.Env -> String -> Scotty.ActionM ()
 handleCurrentUser env authEnv loginEnv loginPath = do
-  maybeAccessToken <-
-    (fmap . fmap)
-      Login.userSessionAccessToken
-      (Session.readSession (Login.envSessionMan loginEnv))
+  maybeAccessToken <- Login.sessionAccessToken loginEnv
   case maybeAccessToken of
     Nothing -> Scotty.redirect (fromString loginPath)
     Just accessToken -> do

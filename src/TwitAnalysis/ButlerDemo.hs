@@ -2,7 +2,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module TwitAnalysis.ButlerDemo where
+module TwitAnalysis.ButlerDemo
+  ( Env
+  , newEnv
+  , registerButlerRoutes
+  ) where
 
 import Prelude hiding (div, head, id)
 

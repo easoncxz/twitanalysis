@@ -22,6 +22,7 @@ scottyApp Env { envAuthEnv
               , envLoginEnv
               , envHomePagePath
               , envLoginPath
+              , envApiCallDemoEnv
               } = do
   Scotty.get "/" (Scotty.redirect "/index.html") -- go to static dir
   Scotty.get
@@ -35,7 +36,7 @@ scottyApp Env { envAuthEnv
   Scotty.get
     "/whoami"
     (ApiDemo.handleCurrentUser
-       (ApiDemo.Env (Auth.envHttpManager envAuthEnv))
+       envApiCallDemoEnv
        envAuthEnv
        envLoginEnv
        envLoginPath)

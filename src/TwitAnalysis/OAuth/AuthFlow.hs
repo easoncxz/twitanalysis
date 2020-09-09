@@ -5,7 +5,7 @@
 
 -- | OAuth 1.0a Consumer authorisation flow to Twitter
 module TwitAnalysis.OAuth.AuthFlow
-  ( Env(envClientCred, envHttpManager) -- opaque-ish
+  ( Env -- opaque
   , BaseUrl(..)
   , OAuthCallbackPath(..)
   , StartOAuthFlowResult(..)
@@ -14,6 +14,7 @@ module TwitAnalysis.OAuth.AuthFlow
   , startOAuthFlow'
   , handleOAuthCallback'
   , myOAuthServer
+  , envClientCred
   ) where
 
 import Control.Concurrent.STM (TVar)
@@ -67,11 +68,9 @@ newtype BaseUrl =
 newtype OAuthCallbackPath =
   OAuthCallbackPath String
 
-newEnv :: BaseUrl -> OAuthCallbackPath -> Maybe HttpClient.Manager -> IO Env
-newEnv (BaseUrl envBaseUrl) (OAuthCallbackPath envCallbackPath) defHttpMan = do
+newEnv :: BaseUrl -> OAuthCallbackPath -> HttpClient.Manager -> IO Env
+newEnv (BaseUrl envBaseUrl) (OAuthCallbackPath envCallbackPath) envHttpManager = do
   envRequestTokenCache <- STM.atomically (STM.newTVar Map.empty)
-  envHttpManager <-
-    defHttpMan `elseDo` HttpClient.newManager Tls.tlsManagerSettings
   envClientCred <- newClientCred
   putStrLn ("Using client credentials: " ++ show envClientCred)
   return

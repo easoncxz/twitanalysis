@@ -28,19 +28,23 @@ import qualified Text.Read as Read
 import qualified TwitAnalysis.ButlerDemo as Butler
 import qualified TwitAnalysis.LoginFlow as Login
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
-
+import qualified TwitAnalysis.TwitterApiCallDemo as ApiCallDemo
 import TwitAnalysis.Utils (mintercalate)
 
 -- | A hierarchical-composition of smaller Env types from various modules!
 data Env =
   Env
     { envPort :: Int
-    , envLoginEnv :: Login.Env
-    , envAuthEnv :: Auth.Env
-    , envButlerEnv :: Butler.Env
+    , envHttpMan :: HttpClient.Manager
+    --
     , envOAuthCallbackPath :: String
     , envHomePagePath :: String
     , envLoginPath :: String
+    --
+    , envApiCallDemoEnv :: ApiCallDemo.Env
+    , envLoginEnv :: Login.Env
+    , envAuthEnv :: Auth.Env
+    , envButlerEnv :: Butler.Env
     }
 
 newEnv :: IO Env
@@ -52,6 +56,7 @@ newEnv = do
          str <- maybeStr
          num <- Read.readMaybe str
          return num
+  envHttpMan <- HttpClient.newManager Tls.tlsManagerSettings
   let baseUrl = "http://localhost:" ++ show envPort
   let envOAuthCallbackPath = "/oauth-callback"
       envHomePagePath = "/home"
@@ -60,9 +65,10 @@ newEnv = do
     Auth.newEnv
       (Auth.BaseUrl baseUrl)
       (Auth.OAuthCallbackPath envOAuthCallbackPath)
-      Nothing
+      envHttpMan
   envButlerEnv <- Butler.newEnv
   envLoginEnv <- Login.newEnv
+  envApiCallDemoEnv <- ApiCallDemo.newEnv envHttpMan
   return
     Env
       { envPort
@@ -72,4 +78,6 @@ newEnv = do
       , envLoginEnv
       , envHomePagePath
       , envLoginPath
+      , envHttpMan
+      , envApiCallDemoEnv
       }
