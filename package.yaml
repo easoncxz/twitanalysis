@@ -22,13 +22,16 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - aeson
 - aeson-pretty
+- async
 - base >= 4.7 && < 5
 - base64-bytestring
+- blaze-builder
 - blaze-html
 - blaze-markup
 - bytestring
 - case-insensitive
 - conduit
+- conduit-extra
 - containers
 - cryptonite
 - hspec
@@ -40,11 +43,12 @@ dependencies:
 - oauthenticated
 - scotty
 - stm
-- time
 - text
+- time
 - twitter-types
 - unordered-containers
 - wai
+- wai-conduit
 - wai-extra
 - wai-middleware-static
 
