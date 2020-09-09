@@ -36,16 +36,16 @@ import qualified TwitAnalysis.MiscWaiMiddleware as Misc
 import qualified TwitAnalysis.OAuth.Signing as Signing
 
 parsePathComps :: T.Text -> [T.Text]
-parsePathComps prefix = T.splitOn "/" prefix -- & filter (/= "")
+parsePathComps prefix = T.splitOn "/" prefix & filter (/= "")
 
 joinPathComps :: [T.Text] -> T.Text
 joinPathComps comps = T.intercalate "/" comps
 
 stripPathPrefix :: [T.Text] -> T.Text -> T.Text
 stripPathPrefix prefix =
-  joinPathComps . Misc.dropPrefix (==) (prependSlash prefix) . parsePathComps
+  joinPathComps . addLeadingSlash . Misc.dropPrefix (==) prefix . parsePathComps
   where
-    prependSlash = ("" :)
+    addLeadingSlash = ("" :)
 
 withUtf8 :: (T.Text -> T.Text) -> BS.ByteString -> BS.ByteString
 withUtf8 transform = TE.encodeUtf8 . transform . TE.decodeUtf8
