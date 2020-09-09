@@ -60,6 +60,19 @@ oauthProxyTests =
           "/something-slash"
       it "strips a matching prefix" $ do
         (OP.stripPathPrefix ["one"] "/one/two") `shouldBe` "/two"
+    describe "stripRequestPathPrefix" $ do
+      it "returns an irrelevant request untouched" $ do
+        let hreq = "http://google.com/one/two" :: HC.Request
+        HC.path (OP.stripRequestPathPrefix ["other"] hreq) `shouldBe`
+          HC.path hreq
+      it "strips prefix for a matching request" $ do
+        let hreq = "http://google.com/one/two" :: HC.Request
+        HC.path (OP.stripRequestPathPrefix ["one"] hreq) `shouldBe`
+          HC.path (hreq {HC.path = "/two"})
+      it "unfortunately also strips trailing slashes" $ do
+        let hreq = "http://google.com/one/two/" :: HC.Request
+        HC.path (OP.stripRequestPathPrefix ["one"] hreq) `shouldBe`
+          HC.path (hreq {HC.path = "/two"})
 
 main :: IO ()
 main =
