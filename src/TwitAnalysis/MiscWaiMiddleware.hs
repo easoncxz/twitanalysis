@@ -35,7 +35,7 @@ dropPrefix :: (a -> b -> Bool) -> [a] -> [b] -> [b]
 dropPrefix eq (x:xs) (y:ys) =
   if x `eq` y
     then dropPrefix eq xs ys
-    else ys
+    else y : ys
 dropPrefix eq _ ys = ys
 
 eatRequestPathPrefix :: [Text] -> Wai.Request -> Wai.Request

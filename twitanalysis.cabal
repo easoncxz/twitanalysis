@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8dd97e86c03a0bcbd494d785eafc7eac0bf527691fc5f02805d34375d5c49f75
+-- hash: 1f0bd1e553b1eac9de95a9f8652a0a37dc9b907c1d55efb489e157c16d82a5bc
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Network.HTTP.Proxy.Patched
       Network.OAuth.ThreeLegged.Patched
       TwitAnalysis.AppEnv
       TwitAnalysis.ButlerDemo
@@ -44,7 +45,8 @@ library
   hs-source-dirs:
       src
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , aeson-pretty
     , async
     , base >=4.7 && <5
@@ -85,7 +87,8 @@ executable twitanalysis-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , aeson-pretty
     , async
     , base >=4.7 && <5
@@ -128,7 +131,8 @@ test-suite twitanalysis-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
+      QuickCheck
+    , aeson
     , aeson-pretty
     , async
     , base >=4.7 && <5
