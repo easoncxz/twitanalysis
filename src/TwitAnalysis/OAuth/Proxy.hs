@@ -54,6 +54,50 @@ stripRequestPathPrefix :: [T.Text] -> HC.Request -> HC.Request
 stripRequestPathPrefix prefix hreq =
   hreq {HC.path = withUtf8 (stripPathPrefix prefix) (HC.path hreq)}
 
-handlePassthruEndpoint ::
-     Cred Permanent -> OAuthParams.Server -> String -> Wai.Middleware
-handlePassthruEndpoint accessCred srv basePath inner wreq wrespond = undefined
+passthruRoute :: [T.Text]
+passthruRoute = ["twitter-passthru"]
+
+rebaseToTwitter :: HC.Request -> HC.Request
+rebaseToTwitter hreq =
+  hreq
+    { HC.host = "api.twitter.com"
+    , HC.path = "/1.1" <> HC.path hreq
+    , HC.secure = True
+    , HC.port = 443
+    }
+
+transformRequest ::
+     (MonadIO m, MonadRandom m)
+  => Cred Permanent
+  -> OAuthParams.Server
+  -> HC.Request
+  -> m HC.Request
+transformRequest accessCred srv =
+  Signing.sign accessCred srv .
+  rebaseToTwitter . stripRequestPathPrefix passthruRoute
+
+matchesPassthruRoute :: Wai.Request -> Bool
+matchesPassthruRoute wreq =
+  withUtf8 (stripPathPrefix passthruRoute) (Wai.rawPathInfo wreq) /=
+  Wai.rawPathInfo wreq
+
+asMiddleware ::
+     HC.Manager
+  -> Cred Permanent
+  -> OAuthParams.Server
+  -> String
+  -> Wai.Middleware
+asMiddleware httpMan accessCred srv basePath =
+  Wai.ifRequest matchesPassthruRoute reroute
+  where
+    reroute ::
+         Wai.Application
+      -> Wai.Request
+      -> (Wai.Response -> IO Wai.ResponseReceived)
+      -> IO Wai.ResponseReceived
+    reroute inner wreq wrespond =
+      HP.doUpstreamRequestVia
+        (transformRequest accessCred srv)
+        httpMan
+        wrespond
+        wreq
