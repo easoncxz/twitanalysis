@@ -1,8 +1,14 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | Signing requests
 --
 -- This is one-layer higher than the neighbour `AuthFlow` module.
 module TwitAnalysis.OAuth.Signing where
 
+import Control.Monad.IO.Class (MonadIO)
+import Crypto.Random (MonadRandom)
+import qualified Network.HTTP.Client as HC
+import qualified Network.OAuth.Signing as OAuthSigning
 import Network.OAuth.Types.Credentials
   ( Client
   , Cred
@@ -14,3 +20,32 @@ import qualified Network.OAuth.Types.Credentials as OAuthCred
 import qualified Network.OAuth.Types.Params as OAuthParams
 
 import qualified TwitAnalysis.OAuth.AuthFlow as AuthFlow
+
+-- | Basically OAuthParams.freshOa, but with my hack applied
+genInitOAuthParams ::
+     (MonadIO m, MonadRandom m)
+  => Cred Permanent
+  -> m (OAuthParams.Oa Permanent)
+genInitOAuthParams accessCred = do
+  oax <- OAuthParams.freshOa accessCred
+  -- Hack around a difference-in-understanding compared to the author of oauthenticated.
+  -- The `oauth_token` component would be omitted from the `Authorization` header otherwise.
+  -- See journal for back-story:
+  --  - https://github.com/easoncxz/twitanalysis/wiki/journal-2020-09-08:-A-%22bug%22-in-%60oauthenticated%60
+  let hackedOax :: OAuthParams.Oa Permanent
+      hackedOax =
+        oax {OAuthParams.workflow = OAuthParams.PermanentTokenRequest "bogus"}
+  return hackedOax
+
+-- | Combining `OAuthParams.freshOa` and `OAuthParams.sign`
+--
+-- Basically `OAuthSigning.oauth`.
+signRequest ::
+     (MonadIO m, MonadRandom m)
+  => Cred Permanent
+  -> OAuthParams.Server
+  -> HC.Request
+  -> m HC.Request
+signRequest accessCred srv hreq = do
+  oax <- genInitOAuthParams accessCred
+  return (OAuthSigning.sign oax srv hreq)

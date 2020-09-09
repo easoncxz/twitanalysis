@@ -28,6 +28,7 @@ import qualified Web.Scotty.Session as Session
 
 import qualified TwitAnalysis.LoginFlow as Login
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
+import qualified TwitAnalysis.OAuth.Signing as Signing
 import TwitAnalysis.Utils (mintercalate)
 
 data Env =
@@ -55,16 +56,9 @@ fetchCurrentUser Env {envHttpMan} cred srv = do
           , ("include_email", Just "false")
           ]
           initReq
-  oax <- OAuthParams.freshOa cred
-  -- Hack around a difference-in-understanding compared to the author of oauthenticated.
-  -- The `oauth_token` component would be omitted from the `Authorization` header otherwise.
-  -- See journal for back-story:
-  --  - https://github.com/easoncxz/twitanalysis/wiki/journal-2020-09-08:-A-%22bug%22-in-%60oauthenticated%60
-  let hackedOax :: OAuthParams.Oa Permanent
-      hackedOax =
-        oax {OAuthParams.workflow = OAuthParams.PermanentTokenRequest "bogus"}
-  putStrLn $ "Here are the generated OAuth params: " ++ show hackedOax
-  let signedReq = OAuthSigning.sign hackedOax srv unsignedReq
+  oauthParams <- Signing.genInitOAuthParams cred
+  putStrLn $ "Here are the generated OAuth params: " ++ show oauthParams
+  let signedReq = OAuthSigning.sign oauthParams srv unsignedReq
   putStrLn $ "About to make this request: " ++ show signedReq
   let headers = (HC.requestHeaders signedReq)
   putStrLn $ "In particular, the headers are: " ++ show headers

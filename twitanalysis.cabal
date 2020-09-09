@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 29c3e9161f9e4aa6d583b4c8b7a01e280b2f5e5f5225a89e093ae1cc22358b3b
+-- hash: e977ae40b269a783380bf3522dac5ebf4eb61686c6d773880355453b6963df2f
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       TwitAnalysis.LoginFlow
       TwitAnalysis.MiscWaiMiddleware
       TwitAnalysis.OAuth.AuthFlow
+      TwitAnalysis.OAuth.Proxy
       TwitAnalysis.OAuth.Signing
       TwitAnalysis.ScottyApp
       TwitAnalysis.TwitterApiCallDemo
@@ -50,11 +51,14 @@ library
     , blaze-html
     , blaze-markup
     , bytestring
+    , case-insensitive
+    , conduit
     , containers
     , cryptonite
     , hspec
     , http-client
     , http-client-tls
+    , http-conduit
     , http-types
     , microlens
     , oauthenticated
@@ -84,11 +88,14 @@ executable twitanalysis-exe
     , blaze-html
     , blaze-markup
     , bytestring
+    , case-insensitive
+    , conduit
     , containers
     , cryptonite
     , hspec
     , http-client
     , http-client-tls
+    , http-conduit
     , http-types
     , microlens
     , oauthenticated
@@ -120,11 +127,14 @@ test-suite twitanalysis-test
     , blaze-html
     , blaze-markup
     , bytestring
+    , case-insensitive
+    , conduit
     , containers
     , cryptonite
     , hspec
     , http-client
     , http-client-tls
+    , http-conduit
     , http-types
     , microlens
     , oauthenticated

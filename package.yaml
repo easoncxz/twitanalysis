@@ -27,11 +27,14 @@ dependencies:
 - blaze-html
 - blaze-markup
 - bytestring
+- case-insensitive
+- conduit
 - containers
 - cryptonite
 - hspec
 - http-client
 - http-client-tls
+- http-conduit
 - http-types
 - microlens
 - oauthenticated
