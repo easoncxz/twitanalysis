@@ -40,12 +40,12 @@ genInitOAuthParams accessCred = do
 -- | Combining `OAuthParams.freshOa` and `OAuthParams.sign`
 --
 -- Basically `OAuthSigning.oauth`.
-sign ::
+oauth ::
      (MonadIO m, MonadRandom m)
   => Cred Permanent
   -> OAuthParams.Server
   -> HC.Request
   -> m HC.Request
-sign accessCred srv hreq = do
+oauth accessCred srv hreq = do
   oax <- genInitOAuthParams accessCred
   return (OAuthSigning.sign oax srv hreq)

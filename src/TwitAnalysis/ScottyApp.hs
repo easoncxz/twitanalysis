@@ -40,6 +40,16 @@ scottyApp Env { envAuthEnv
        envAuthEnv
        envLoginEnv
        envLoginPath)
+  Scotty.get
+    "/compose-tweet"
+    (ApiDemo.showTweetPrompt envLoginEnv envLoginPath "/submit-tweet")
+  Scotty.post
+    "/submit-tweet"
+    (ApiDemo.handleTweetSubmit
+       envApiCallDemoEnv
+       envAuthEnv
+       envLoginEnv
+       envLoginPath)
   where
     s = fromString
 
