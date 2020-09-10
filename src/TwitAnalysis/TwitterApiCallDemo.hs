@@ -9,11 +9,13 @@ module TwitAnalysis.TwitterApiCallDemo
   , handleCurrentUser
   , showTweetPrompt
   , handleTweetSubmit
+  , withEntireResponse
   ) where
 
 import Control.Applicative ((<|>))
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class (MonadIO)
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Encode.Pretty as AP
 import qualified Data.ByteString as BS
@@ -53,6 +55,8 @@ newEnv :: HC.Manager -> IO Env
 newEnv envHttpMan = return (UnsafeEnv {envHttpMan})
 
 -- | Help... gather everything into one BSL.ByteString ...
+--
+-- HELP!! Wanting monad-control MonadBaseControl here but I don't know how to use it.
 withEntireResponse ::
      HC.Request -> HC.Manager -> (HC.Response BSL.ByteString -> IO a) -> IO a
 withEntireResponse req man cont =

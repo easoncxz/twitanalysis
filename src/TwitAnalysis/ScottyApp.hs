@@ -13,6 +13,7 @@ import qualified TwitAnalysis.ButlerDemo as Butler
 import qualified TwitAnalysis.LoginFlow as LoginFlow
 import qualified TwitAnalysis.MiscWaiMiddleware as Middle
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
+import qualified TwitAnalysis.OAuth.Proxy as MyProxy
 import qualified TwitAnalysis.TwitterApiCallDemo as ApiDemo
 
 scottyApp :: Env -> Scotty.ScottyM ()
@@ -22,6 +23,7 @@ scottyApp Env { envAuthEnv
               , envLoginEnv
               , envHomePagePath
               , envLoginPath
+              , envHttpMan
               , envApiCallDemoEnv
               } = do
   Scotty.get "/" (Scotty.redirect "/index.html") -- go to static dir
@@ -50,6 +52,12 @@ scottyApp Env { envAuthEnv
        envAuthEnv
        envLoginEnv
        envLoginPath)
+  MyProxy.registerPassthruEndpoint
+    "/to-twitter"
+    envHttpMan
+    (Auth.envClientCred envAuthEnv)
+    Auth.myOAuthServer
+    envLoginEnv
   where
     s = fromString
 

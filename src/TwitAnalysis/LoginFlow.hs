@@ -11,6 +11,7 @@ module TwitAnalysis.LoginFlow
   , viewLogin
   , viewHome
   , sessionAccessToken
+  , sessionAccessCred
   ) where
 
 import Control.Monad.IO.Class (liftIO)
@@ -53,6 +54,14 @@ newEnv = do
 sessionAccessToken :: Env -> Scotty.ActionM (Maybe (Token Permanent))
 sessionAccessToken UnsafeEnv {envSessionMan} =
   (fmap . fmap) userSessionAccessToken (Session.readSession envSessionMan)
+
+sessionAccessCred ::
+     Env -> Cred OAuthCred.Client -> Scotty.ActionM (Maybe (Cred Permanent))
+sessionAccessCred env clientCred = do
+  maybeToken <- sessionAccessToken env
+  return $ do
+    token <- maybeToken
+    return (OAuthCred.permanentCred token clientCred)
 
 viewLogin :: Env -> Auth.Env -> String -> Scotty.ActionM ()
 viewLogin UnsafeEnv {envSessionMan} authEnv homePagePath = do

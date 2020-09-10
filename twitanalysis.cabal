@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1f0bd1e553b1eac9de95a9f8652a0a37dc9b907c1d55efb489e157c16d82a5bc
+-- hash: ba4269fa2aa7c46635f1d91d420596d978d275a748eeddee7ed510922ed47ccd
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -60,6 +60,7 @@ library
     , conduit-extra
     , containers
     , cryptonite
+    , exceptions
     , hspec
     , http-client
     , http-client-tls
@@ -102,6 +103,7 @@ executable twitanalysis-exe
     , conduit-extra
     , containers
     , cryptonite
+    , exceptions
     , hspec
     , http-client
     , http-client-tls
@@ -146,6 +148,7 @@ test-suite twitanalysis-test
     , conduit-extra
     , containers
     , cryptonite
+    , exceptions
     , hspec
     , http-client
     , http-client-tls

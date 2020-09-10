@@ -35,6 +35,7 @@ dependencies:
 - conduit-extra
 - containers
 - cryptonite
+- exceptions
 - hspec
 - http-client
 - http-client-tls
