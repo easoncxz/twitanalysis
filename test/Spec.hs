@@ -84,7 +84,7 @@ main =
         --    https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-user_timeline
         -- Fixes to sample needed: JSON-quoting of double-quotes in the `source` fields.
        do
-        sampleJsonBs <- BSL8.readFile "test/resources/sample-user.json"
+        sampleJsonBs <- BSL8.readFile "test/resources/sample-status.json"
         case Aeson.eitherDecode sampleJsonBs of
           Left msg -> fail msg
           Right (status :: Twitter.Status) -> do
