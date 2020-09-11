@@ -59,6 +59,7 @@ scottyApp Env { envAuthEnv
       (Auth.envClientCred envAuthEnv)
       Auth.myOAuthServer
       envLoginEnv
+  Scotty.get "/a-particular-tweet" $ MyProxy.viewOneParticularTweet
   where
     s = fromString
 
@@ -70,5 +71,5 @@ startServer = do
     Scotty.middleware logStdout
     Scotty.middleware Middle.justFavicon
     Scotty.middleware Middle.myStaticMiddleware
-    Scotty.middleware Middle.showWaiRequest
+    -- Scotty.middleware Middle.showWaiRequest
     scottyApp env
