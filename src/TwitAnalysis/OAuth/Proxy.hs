@@ -10,7 +10,6 @@
 --  - TwitAnalysis.OAuth.Signing: sign
 module TwitAnalysis.OAuth.Proxy
   ( handlePassthruEndpoint
-  , asMiddleware
   , requestConversionLoggingMiddleware
   ) where
 
@@ -223,41 +222,3 @@ handlePassthruEndpoint passthruRoute httpMan clientCred srv loginEnv = do
       hresponse <-
         liftIO $ callTwitterApi httpMan accessCred srv passthruRoute wreq
       interpretHttpClientResponse hresponse
-
-matchesPassthruRoute :: T.Text -> Wai.Request -> Bool
-matchesPassthruRoute passthruRoute wreq =
-  withUtf8
-    (stripPathPrefix (parsePathComps passthruRoute))
-    (Wai.rawPathInfo wreq) /=
-  Wai.rawPathInfo wreq
-
-asMiddleware ::
-     HC.Manager
-  -> Cred Permanent
-  -> OAuthParams.Server
-  -> T.Text
-  -> Wai.Middleware
-asMiddleware httpMan accessCred srv passthruRoute =
-  Wai.ifRequest (matchesPassthruRoute passthruRoute) reroute
-  where
-    reroute ::
-         Wai.Application
-      -> Wai.Request
-      -> (Wai.Response -> IO Wai.ResponseReceived)
-      -> IO Wai.ResponseReceived
-    reroute inner wreq wrespond =
-      HP.doUpstreamRequestVia
-        (transformRequest accessCred srv passthruRoute)
-        httpMan
-        wrespond
-        wreq
-    transformRequest ::
-         (MonadIO m, MonadRandom m)
-      => Cred Permanent
-      -> OAuthParams.Server
-      -> T.Text
-      -> HC.Request
-      -> m HC.Request
-    transformRequest accessCred srv passthruRoute =
-      MySigning.oauth accessCred srv .
-      rebaseToTwitter . stripRequestPathPrefix (parsePathComps passthruRoute)
