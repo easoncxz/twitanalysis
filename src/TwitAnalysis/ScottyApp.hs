@@ -52,12 +52,13 @@ scottyApp Env { envAuthEnv
        envAuthEnv
        envLoginEnv
        envLoginPath)
-  MyProxy.registerPassthruEndpoint
-    "/to-twitter"
-    envHttpMan
-    (Auth.envClientCred envAuthEnv)
-    Auth.myOAuthServer
-    envLoginEnv
+  Scotty.matchAny (Scotty.regex "^/to-twitter/") $ do
+    MyProxy.handlePassthruEndpoint
+      "/to-twitter"
+      envHttpMan
+      (Auth.envClientCred envAuthEnv)
+      Auth.myOAuthServer
+      envLoginEnv
   where
     s = fromString
 
@@ -69,4 +70,5 @@ startServer = do
     Scotty.middleware logStdout
     Scotty.middleware Middle.justFavicon
     Scotty.middleware Middle.myStaticMiddleware
+    Scotty.middleware Middle.showWaiRequest
     scottyApp env

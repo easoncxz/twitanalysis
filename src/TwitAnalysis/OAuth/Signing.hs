@@ -48,4 +48,4 @@ oauth ::
   -> m HC.Request
 oauth accessCred srv hreq = do
   oax <- genInitOAuthParams accessCred
-  return (OAuthSigning.sign oax srv hreq)
+  return $ OAuthSigning.sign oax srv hreq

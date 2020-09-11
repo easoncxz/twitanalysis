@@ -9,7 +9,7 @@
 --  - Network.HTTP.Proxy.Patched: doUpstreamRequestVia
 --  - TwitAnalysis.OAuth.Signing: sign
 module TwitAnalysis.OAuth.Proxy
-  ( registerPassthruEndpoint
+  ( handlePassthruEndpoint
   , asMiddleware
   , requestConversionLoggingMiddleware
   ) where
@@ -25,6 +25,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
+import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
 import Data.Function ((&))
 import Data.String (fromString)
@@ -36,6 +37,7 @@ import qualified Network.HTTP.Client as HC
 import qualified Network.HTTP.Conduit as HU
 import qualified Network.HTTP.Proxy.Patched as HP
 import qualified Network.HTTP.Types as HT
+import qualified Network.HTTP.Types.Header as HHT
 import Network.OAuth.Types.Credentials (Cred, Permanent)
 import qualified Network.OAuth.Types.Credentials as OAuthCred
 import qualified Network.OAuth.Types.Params as OAuthParams
@@ -77,7 +79,9 @@ waiRequestToHttpClient wreq = do
      in HC.parseRequest $
         BS8.unpack
           (toBeOverwritten <> Wai.rawPathInfo wreq <> Wai.rawQueryString wreq)
-  bodyLbs :: BSL.ByteString <- liftIO $ Wai.strictRequestBody wreq
+  -- bodyLbs :: BSL.ByteString <- liftIO $ Wai.strictRequestBody wreq
+  -- let body = HC.RequestBodyLBS bodyLbs
+  let body = convertBody wreq
   let hreq1 =
         hreq0
           { HC.method = Wai.requestMethod wreq
@@ -85,7 +89,7 @@ waiRequestToHttpClient wreq = do
               HC.requestHeaders hreq0 ++
               (filter keepHeader (Wai.requestHeaders wreq))
           , HC.redirectCount = 0 -- Always pass redirects back to the client.
-          , HC.requestBody = HC.RequestBodyLBS bodyLbs
+          , HC.requestBody = body
               -- HU.requestBodySourceChunkedIO (WU.sourceRequestBody wreq)
           -- , HC.decompress = const False
           }
@@ -129,6 +133,64 @@ interpretHttpClientResponse res = do
       (TL.fromStrict (TE.decodeUtf8 valueBs))
   Scotty.raw (HC.responseBody res)
 
+pickHeaders :: Eq k => [k] -> [(k, v)] -> [(k, v)]
+pickHeaders keys orig = filter ((`elem` keys) . fst) orig
+
+hideHeaders :: Eq k => [k] -> [(k, v)] -> [(k, v)]
+hideHeaders keys orig = filter ((`notElem` keys) . fst) orig
+
+-- | Picking out the Conduit part of `doUpstreamRequest` from `http-proxy`
+convertBody :: Wai.Request -> HC.RequestBody
+convertBody wreq =
+  case Wai.requestBodyLength wreq of
+    Wai.ChunkedBody -> HU.requestBodySourceChunkedIO (WU.sourceRequestBody wreq)
+    Wai.KnownLength l ->
+      HU.requestBodySourceIO (fromIntegral l) (WU.sourceRequestBody wreq)
+
+callTwitterApi ::
+     HC.Manager
+  -> Cred Permanent
+  -> OAuthParams.Server
+  -> T.Text
+  -> Wai.Request
+  -> IO (HC.Response BSL.ByteString)
+callTwitterApi httpMan accessCred srv passthruRoute wreq = do
+  let passthruRouteComps = parsePathComps passthruRoute
+      strippedRawPathInfoAndQuery =
+        T.unpack $
+        stripPathPrefix
+          passthruRouteComps
+          (TE.decodeUtf8 (Wai.rawPathInfo wreq <> Wai.rawQueryString wreq))
+  let url =
+        "https://api.twitter.com/1.1" <> strippedRawPathInfoAndQuery :: String
+      method = Wai.requestMethod wreq :: BS.ByteString
+      headers
+        -- ^ Only a select few headers to keep
+       =
+        pickHeaders ["Content-Type", "Accept"] (Wai.requestHeaders wreq) :: [HHT.Header]
+  putStrLn ("callTwitterApi about to use this URL: " ++ url)
+  putStrLn ("callTwitterApi about to use this method: " ++ show method)
+  putStrLn
+    ("callTwitterApi about to use these request headers: " ++ show headers)
+  let body = convertBody wreq
+  hreq0 <- HC.parseRequest url
+  let hreq1 =
+        hreq0
+          { HC.method = method
+          , HC.requestHeaders = headers
+          , HC.requestBody = body
+          }
+  putStrLn
+    ("callTwitterApi about to sign this unauthenticated HC.Request: " ++
+     show hreq1)
+  signed <- MySigning.oauth accessCred srv hreq1
+  putStrLn
+    ("callTwitterApi about to fire off this signed HC.Request: " ++ show signed)
+  putStrLn
+    ("In particular, the request headers are: " ++
+     show (HC.requestHeaders signed))
+  ApiCallDemo.withEntireResponse signed httpMan return
+
 -- Forget about MonadBaseControl; Scotty's `ActionM ()` doesn't even have
 -- a MonadRandom instance.
 withTwitterApiCall ::
@@ -156,34 +218,26 @@ withTwitterApiCall httpMan accessCred srv passthruRoute wreq cont = do
     putStrLn ("withTwitterApiCall received this response: " ++ show resp)
     cont resp
 
-registerPassthruEndpoint ::
-     String
+handlePassthruEndpoint ::
+     T.Text
   -> HC.Manager
   -> Cred OAuthCred.Client
   -> OAuthParams.Server
   -> Login.Env
-  -> Scotty.ScottyM ()
-registerPassthruEndpoint passthruRouteStr httpMan clientCred srv loginEnv = do
-  Scotty.matchAny (Scotty.regex ('^' : passthruRouteStr)) $ do
-    liftIO $ putStrLn "Control reached the MyProxy handler"
-    maybeAccessCred <- Login.sessionAccessCred loginEnv clientCred
-    case maybeAccessCred of
-      Nothing -> do
-        Scotty.status HT.status401
-        let msg = "You are not logged in yet" :: T.Text
-        Scotty.json $ Aeson.object ["error" .= msg]
-      Just accessCred -> do
-        wreq :: Wai.Request <- Scotty.request
-        hresponse <-
-          liftIO $
-          withTwitterApiCall
-            httpMan
-            accessCred
-            srv
-            (T.pack passthruRouteStr)
-            wreq
-            return
-        interpretHttpClientResponse hresponse
+  -> Scotty.ActionM ()
+handlePassthruEndpoint passthruRoute httpMan clientCred srv loginEnv = do
+  liftIO $ putStrLn "Control reached handlePassthruEndpoint"
+  maybeAccessCred <- Login.sessionAccessCred loginEnv clientCred
+  case maybeAccessCred of
+    Nothing -> do
+      Scotty.status HT.status401
+      let msg = "You are not logged in yet" :: T.Text
+      Scotty.json $ Aeson.object ["error" .= msg]
+    Just accessCred -> do
+      wreq :: Wai.Request <- Scotty.request
+      hresponse <-
+        liftIO $ callTwitterApi httpMan accessCred srv passthruRoute wreq
+      interpretHttpClientResponse hresponse
 
 matchesPassthruRoute :: T.Text -> Wai.Request -> Bool
 matchesPassthruRoute passthruRoute wreq =

@@ -58,3 +58,8 @@ prefixedStatic prefix next request respond = do
         (eatRequestPathPrefix (parsePrefix rest) request)
         respond
     _ -> next request respond
+
+showWaiRequest :: Wai.Middleware
+showWaiRequest next request respond = do
+  putStrLn ("showWaiRequest received this Wai.Request: " <> show request)
+  next request respond
