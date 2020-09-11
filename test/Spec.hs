@@ -11,7 +11,7 @@ import qualified Test.QuickCheck as QC
 import qualified Web.Twitter.Types as Twitter
 
 import qualified TwitAnalysis.MiscWaiMiddleware as Misc
-import qualified TwitAnalysis.OAuth.Proxy as OP
+import qualified TwitAnalysis.OAuth.Proxy.Internals as OP
 
 oauthProxyTests :: Spec
 oauthProxyTests =

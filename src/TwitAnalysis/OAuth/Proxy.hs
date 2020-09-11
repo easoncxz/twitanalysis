@@ -27,7 +27,6 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.CaseInsensitive (CI)
 import qualified Data.CaseInsensitive as CI
-import Data.Function ((&))
 import Data.String (fromString)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -48,28 +47,14 @@ import Text.Blaze.Html5 (Markup, (!))
 import qualified Web.Scotty as Scotty
 
 import qualified TwitAnalysis.LoginFlow as Login
-import qualified TwitAnalysis.MiscWaiMiddleware as Misc
+import TwitAnalysis.OAuth.Proxy.Internals
+  ( parsePathComps
+  , stripPathPrefix
+  , stripRequestPathPrefix
+  , withUtf8
+  )
 import qualified TwitAnalysis.OAuth.Signing as MySigning
 import qualified TwitAnalysis.TwitterApiCallDemo as ApiCallDemo
-
-parsePathComps :: T.Text -> [T.Text]
-parsePathComps prefix = T.splitOn "/" prefix & filter (/= "")
-
-joinPathComps :: [T.Text] -> T.Text
-joinPathComps comps = T.intercalate "/" comps
-
-stripPathPrefix :: [T.Text] -> T.Text -> T.Text
-stripPathPrefix prefix =
-  joinPathComps . addLeadingSlash . Misc.dropPrefix (==) prefix . parsePathComps
-  where
-    addLeadingSlash = ("" :)
-
-withUtf8 :: (T.Text -> T.Text) -> BS.ByteString -> BS.ByteString
-withUtf8 transform = TE.encodeUtf8 . transform . TE.decodeUtf8
-
-stripRequestPathPrefix :: [T.Text] -> HC.Request -> HC.Request
-stripRequestPathPrefix prefix hreq =
-  hreq {HC.path = withUtf8 (stripPathPrefix prefix) (HC.path hreq)}
 
 waiRequestToHttpClient ::
      (MonadThrow m, MonadIO m) => Wai.Request -> m HC.Request
