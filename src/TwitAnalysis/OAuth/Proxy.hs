@@ -116,12 +116,13 @@ handlePassthruEndpoint passthruRoute httpMan clientCred srv loginEnv = do
       let msg = "You are not logged in yet" :: T.Text
       Scotty.json $ Aeson.object ["error" .= msg]
     Just accessCred -> do
+      bodyLbs :: BSL.ByteString <- Scotty.body
       wreq :: Wai.Request <- Scotty.request
-      liftIO $ logWaiRequestBody wreq
+      -- liftIO $ logWaiRequestBody wreq
       signed :: HC.Request <-
-        liftIO $ prepareSignedRequest accessCred srv passthruRoute wreq
-      jsonResponse :: HC.Response Aeson.Value <- sendJsonRequest httpMan signed
-      interpretJsonResponse jsonResponse
+        liftIO $ prepareSignedRequest accessCred srv passthruRoute bodyLbs wreq
+      jresp :: HC.Response Aeson.Value <- sendJsonRequest httpMan signed
+      renderJsonResponse jresp
   where
     logWaiRequestBody wreq = do
       lbs :: BSL.ByteString <- Wai.strictRequestBody wreq
@@ -131,9 +132,10 @@ prepareSignedRequest ::
      Cred Permanent
   -> OAuthParams.Server
   -> T.Text
+  -> BSL.ByteString
   -> Wai.Request
   -> IO HC.Request
-prepareSignedRequest accessCred srv passthruRoute wreq = do
+prepareSignedRequest accessCred srv passthruRoute bodyLbs wreq = do
   let passthruRouteComps = parsePathComps passthruRoute
       strippedRawPathInfoAndQuery =
         T.unpack $
@@ -147,10 +149,10 @@ prepareSignedRequest accessCred srv passthruRoute wreq = do
       headers =
         pickHeaders
           [ "Content-Type"
-          , "Accept"
           -- , "Content-Length"
           -- , "Content-Encoding"
-          , "Accept-Encoding"
+          -- , "Accept"
+          -- , "Accept-Encoding"
           ]
           (Wai.requestHeaders wreq) :: [HHT.Header]
   putStrLn ("prepareSignedRequest about to use this URL: " ++ url)
@@ -158,10 +160,14 @@ prepareSignedRequest accessCred srv passthruRoute wreq = do
   putStrLn
     ("prepareSignedRequest about to use these request headers: " ++ show headers)
   body <-
-    do bodyLbs <- Wai.strictRequestBody wreq
-       BSL8.putStrLn
+    do BSL8.putStrLn
          ("prepareSignedRequest about to use this request body: " <> bodyLbs)
-       return $ HC.RequestBodyLBS bodyLbs
+       return (HC.RequestBodyLBS bodyLbs)
+  -- body <-
+  --   do bodyLbs <- Wai.strictRequestBody wreq
+  --      BSL8.putStrLn
+  --        ("prepareSignedRequest about to use this request body: " <> bodyLbs)
+  --      return $ HC.RequestBodyLBS bodyLbs
   -- let body = convertBody wreq
   hreq0 <- HC.parseRequest url
   let hreq1 =
@@ -182,22 +188,44 @@ prepareSignedRequest accessCred srv passthruRoute wreq = do
     BS8.putStrLn ("HC.Request header: " <> CI.original name <> " = " <> value)
   return signed
 
--- | Make the request to Twitter (or fail the request to us)
+-- | Make the request to Twitter
 sendJsonRequest ::
      HC.Manager -> HC.Request -> Scotty.ActionM (HC.Response Aeson.Value)
 sendJsonRequest httpMan hreq = do
   hresp <- liftIO $ ApiCallDemo.withEntireResponse hreq httpMan return
-  j <- scottyDecodeJson (HC.responseBody hresp)
-  return (const j <$> hresp)
+  let bsl = HC.responseBody hresp
+  case Aeson.eitherDecode bsl of
+    Left msg -> do
+      let errorJ =
+            Aeson.object
+              [ "jsonDecodeErrorMsg" .= Aeson.String (T.pack msg)
+              , "nonJsonResponseBody" .=
+                Aeson.String (TE.decodeUtf8 (BSL.toStrict bsl))
+              ]
+      return $ const errorJ <$> hresp
+    Right (j :: Aeson.Value) -> return $ const j <$> hresp
 
 viewOneParticularTweet :: Scotty.ActionM ()
 viewOneParticularTweet = do
+  wreq <- Scotty.request
+  bodyLbs <- Scotty.body
+  liftIO $ do
+    putStrLn
+      ("viewOneParticularTweet received method: " ++
+       show (Wai.requestMethod wreq))
+    reqLbs <- Wai.strictRequestBody wreq
+    BSL8.putStrLn
+      ("viewOneParticularTweet received the request body (Wai.strictRequestBody): " <>
+       reqLbs)
+    BSL8.putStrLn
+      ("viewOneParticularTweet received the request body (Scotty.body): " <>
+       bodyLbs)
   let status = HT.status200
       headers = [(CI.mk "Content-Type", "application/json")]
-  bodyLbs :: BSL.ByteString <-
+  respBodyLbs :: BSL.ByteString <-
     liftIO $ BSL8.readFile "test/resources/sample-status.json"
-  body :: Aeson.Value <- scottyDecodeJson bodyLbs
-  interpretJsonResponseComponents status headers body
+  respBody :: Aeson.Value <- scottyDecodeJson respBodyLbs
+  interpretJsonResponseComponents status headers respBody
 
 -- | "It has to decode."
 scottyDecodeJson :: BSL.ByteString -> Scotty.ActionM Aeson.Value
@@ -209,25 +237,23 @@ scottyDecodeJson bsl =
     Right (j :: Aeson.Value) -> return j
 
 -- | Pick out pieces of the HC.Response and explain them to Scotty
-interpretJsonResponse :: HC.Response Aeson.Value -> Scotty.ActionM ()
-interpretJsonResponse res = do
+renderJsonResponse :: HC.Response Aeson.Value -> Scotty.ActionM ()
+renderJsonResponse res = do
+  let status = HC.responseStatus res
+      -- | Only render a select few headers
+      headers = pickHeaders ["Content-Type"] $ HC.responseHeaders res
+      body = HC.responseBody res
   liftIO $ do
     putStrLn
-      ("interpretJsonResponse about to render HC.Response status: " ++
-       show status)
+      ("renderJsonResponse about to render HC.Response status: " ++ show status)
     forM_ headers $ \(name, value) -> do
       BS8.putStrLn
-        ("interpretJsonResponse about to render HC.Response header: " <>
+        ("renderJsonResponse about to render HC.Response header: " <>
          CI.original name <> " = " <> value)
     BSL8.putStrLn
-      ("interpretJsonResponse about to render HC.Response body: " <>
+      ("renderJsonResponse about to render HC.Response body: " <>
        AP.encodePretty body)
   interpretJsonResponseComponents status headers body
-  where
-    status = HC.responseStatus res
-    -- | Only render a select few headers
-    headers = pickHeaders ["Content-Type"] $ HC.responseHeaders res
-    body = HC.responseBody res
 
 interpretJsonResponseComponents ::
      HT.Status -> [HHT.Header] -> Aeson.Value -> Scotty.ActionM ()
