@@ -6,3 +6,7 @@ ignore/
 
 # vim
 *.swp
+
+# Project-local Gems
+# https://blog.jez.io/ruby-virtualenvs/
+.gems
