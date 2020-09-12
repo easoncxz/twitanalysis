@@ -10,3 +10,7 @@ ignore/
 # Project-local Gems
 # https://blog.jez.io/ruby-virtualenvs/
 .gems
+
+# Jekyll temp files
+.sass-cache
+_site
