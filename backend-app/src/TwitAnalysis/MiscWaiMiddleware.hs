@@ -29,7 +29,7 @@ justFavicon next request respond =
 
 myStaticMiddleware :: Wai.Middleware
 myStaticMiddleware =
-  Static.staticPolicy (Static.noDots <> Static.addBase "frontend-app/static/")
+  Static.staticPolicy (Static.noDots <> Static.addBase "static/")
 
 dropPrefix :: (a -> b -> Bool) -> [a] -> [b] -> [b]
 dropPrefix eq (x:xs) (y:ys) =

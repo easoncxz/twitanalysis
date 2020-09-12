@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ba4269fa2aa7c46635f1d91d420596d978d275a748eeddee7ed510922ed47ccd
+-- hash: 71b308f94bb3e83c26d75019fb14cb959a475deb6cf6fb5dfe76035c05d07f81
 
 name:           twitanalysis
 version:        0.1.0.0
@@ -15,7 +15,6 @@ author:         easoncxz
 maintainer:     easoncxz@gmail.com
 copyright:      2020 easoncxz
 license:        AllRightsReserved
-license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
@@ -35,6 +34,7 @@ library
       TwitAnalysis.MiscWaiMiddleware
       TwitAnalysis.OAuth.AuthFlow
       TwitAnalysis.OAuth.Proxy
+      TwitAnalysis.OAuth.Proxy.Internals
       TwitAnalysis.OAuth.Signing
       TwitAnalysis.ScottyApp
       TwitAnalysis.TwitterApiCallDemo
