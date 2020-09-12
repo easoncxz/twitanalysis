@@ -1,0 +1,3 @@
+[submodule "wiki-repo"]
+	path = wiki-repo
+	url = git@github.com:easoncxz/twitanalysis.wiki.git
