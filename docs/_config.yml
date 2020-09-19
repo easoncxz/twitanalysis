@@ -35,12 +35,26 @@ collections:
 #   linked from:
 #     https://jekyllrb.com/docs/front-matter/
 defaults:
+
+# Essentially change the default layout with the follow 3 default-assignments
+- scope:
+    path: ''
+    type: 'pages'
+  values:
+    layout: 'patched-slate'
 - scope:
     path: ''
     type: 'posts'
   values:
     layout: 'patched-slate'
 - scope:
+    path: ''
+    type: 'drafts'
+  values:
+    layout: 'patched-slate'
+
+- scope:
+    path: ''
     type: 'journal_entries'
   values:
     layout: 'journal-entry-layout'
