@@ -36,6 +36,11 @@ collections:
 #     https://jekyllrb.com/docs/front-matter/
 defaults:
 - scope:
+    path: ''
+    type: 'posts'
+  values:
+    layout: 'patched-slate'
+- scope:
     type: 'journal_entries'
   values:
     layout: 'journal-entry-layout'
