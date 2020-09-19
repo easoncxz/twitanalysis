@@ -1,0 +1,23 @@
+---
+layout: default
+---
+
+{% comment %}
+It's not clear why there is this free-variable `page` in-scope.
+It appears to be a special variable.
+
+Relevant docs: Layouts
+    https://jekyllrb.com/docs/layouts/
+
+`page.title` reaches in to each page's front-matter, kind of
+"calling a hook".
+
+`page.date` reads Jekyll-maintained metadata, as documented
+in the reference doc above.
+{% endcomment %}
+
+<h1>{{ page.title }}</h1>
+<p>Published: {{ page.date }}</p>
+<hr />
+
+{{ content }}

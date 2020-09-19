@@ -1,1 +1,41 @@
+
+# Source repo:
+#   https://github.com/pages-themes/slate/
+#
+# Check the source repo for the definitions of e.g. `_layout/default.html`
 theme: jekyll-theme-slate
+
+# Mimic Github Pages URLs
+#
+# This means this string should match the repository name as how it is
+# known to Github.
+#
+# Reference doc:
+#   https://jekyllrb.com/docs/configuration/options/
+#
+# Potential trouble-shooting in smart URL Liquid tags:
+#   Forum: https://talk.jekyllrb.com/t/relative-url-and-baseurl/2051/6
+baseurl: '/twitanalysis'
+
+# Guide doc:
+#   https://jekyllrb.com/docs/collections/
+collections:
+  journal_entries:
+    # Always produce an HTML file corresponding to each input file
+    output: true
+
+# Avoid repeating the `layout: default` in every single front-matter
+#
+# Forum:
+#   https://talk.jekyllrb.com/t/collections-setting-front-matter-defaults-with-nested-directories/1643
+#
+# Reference docs:
+#   https://jekyllrb.com/docs/configuration/front-matter-defaults/
+#
+#   linked from:
+#     https://jekyllrb.com/docs/front-matter/
+defaults:
+- scope:
+    type: 'journal_entries'
+  values:
+    layout: 'journal-entry-layout'
