@@ -14,3 +14,6 @@ ignore/
 # Jekyll temp files
 .sass-cache
 _site
+
+# backend binary builds
+*.bdist.tar.gz
