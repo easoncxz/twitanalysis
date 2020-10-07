@@ -17,11 +17,20 @@ task :publish, [:tag] => [:package] do |t, args|
   puts "Working with tag: #{git_tag}"
   puts "Reading this bdist tarball: #{tarball}"
   # Do stuff:
-  client = Octokit::Client.new(:access_token => ENV['GITHUB_OAUTH_TOKEN'])
+  token = ENV['GITHUB_OAUTH_TOKEN']
+  unless token
+    puts "Error: We need a Github OAuth 2.0 access token in GITHUB_OAUTH_TOKEN."
+    Process.exit 1
+  end
+  client = Octokit::Client.new(:access_token => token)
   release =
     begin
+      # All possible client errors:
+      #   https://octokit.github.io/octokit.rb/Octokit/ClientError.html
+      puts "Trying to fetch release: #{git_tag}"
       client.release_for_tag(repo, git_tag)
     rescue Octokit::NotFound => e
+      puts "Trying to create release: #{git_tag}"
       client.create_release(repo, git_tag)
     end
   puts "Using this release: #{release.html_url}" # https://developer.github.com/v3/repos/releases/#list-releases
