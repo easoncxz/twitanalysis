@@ -16,6 +16,11 @@ task :publish, [:tag] => [:package] do |t, args|
   puts "Working with repo: #{repo}"
   puts "Working with tag: #{git_tag}"
   puts "Reading this bdist tarball: #{tarball}"
+  unless File.exist? tarball
+    puts "Error: package not yet built: #{tarball}"
+    puts "Run `rake package` first."
+    Process.exit 1
+  end
   # Do stuff:
   token = ENV['GITHUB_OAUTH_TOKEN']
   unless token
@@ -53,6 +58,9 @@ end
 
 task package: [:build_frontend, :build_backend] do
   BUILT_PACKAGES_DIR = 'built-packages'
+  unless Dir.exist? BUILT_PACKAGES_DIR
+    Dir.mkdir BUILT_PACKAGES_DIR
+  end
   def read_cabal_package_version
     version_line = `grep '^\s*version' twitanalysis.cabal`.chomp
     return /:\s*([0-9a-zA-Z.]+)$/.match(version_line.chomp)[1]
