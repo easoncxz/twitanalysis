@@ -254,6 +254,7 @@ PLATFORMS
 
 DEPENDENCIES
   github-pages
+  octokit (~> 4.18)
   rake (~> 13.0)
 
 BUNDLED WITH

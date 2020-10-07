@@ -1,5 +1,46 @@
 
+require 'octokit'
+
 task default: [:package]
+
+# Args and deps:
+#     https://stackoverflow.com/questions/5736786/how-do-you-declare-a-rake-task-that-depends-on-a-parameterized-task
+task :publish, [:tag] => [:package] do |t, args|
+  # Define variables:
+  repo = 'easoncxz/twitanalysis'
+  git_tag = args[:tag] || begin
+    puts "Which version to publish? Pass a Git tag: rake publish GIT_TAG"
+    Process.exit 1
+  end
+  tarball = `realpath built-packages/twitanalysis.bdist.tar.gz`.chomp
+  puts "Working with repo: #{repo}"
+  puts "Working with tag: #{git_tag}"
+  puts "Reading this bdist tarball: #{tarball}"
+  # Do stuff:
+  client = Octokit::Client.new(:access_token => ENV['GITHUB_OAUTH_TOKEN'])
+  release =
+    begin
+      client.release_for_tag(repo, git_tag)
+    rescue Octokit::NotFound => e
+      client.create_release(repo, git_tag)
+    end
+  puts "Using this release: #{release.html_url}" # https://developer.github.com/v3/repos/releases/#list-releases
+  online =
+    begin
+      existing_assets = client.release_assets(release.url)
+      bdist_found = existing_assets.select do |a|
+        a.name =~ /^twitanalysis.*\.bdist\.tar\.gz$/
+      end.first
+      if bdist_found
+        bdist_found
+      else
+        client.upload_asset(release.url, tarball, content_type: 'application/gzip')
+      end
+    end
+  puts "File now online: #{online.name}"
+  puts "This file's URL: #{online.browser_download_url}"  # https://developer.github.com/v3/repos/releases/#list-release-assets
+  puts "Release URL: #{release.html_url}"
+end
 
 task package: [:build_frontend, :build_backend] do
   BUILT_PACKAGES_DIR = 'built-packages'

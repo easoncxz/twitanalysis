@@ -47,3 +47,16 @@ Or in GHCi:
 
     ghci> :l test/Spec.hs
     ghci> :main
+
+## Environment
+
+These environment variables are needed by the backend-app server:
+
+### PORT
+
+Used in `src/TwitAnalysis/AppEnv.hs`. This is where the server will listen.
+
+### TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
+
+Used in `src/TwitAnalysis/OAuth/AuthFlow.hs`. Register for this on Twitter.
+Twitter currently isn't making this easy.

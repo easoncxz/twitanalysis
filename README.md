@@ -17,6 +17,22 @@ Currently not well defined. The critical link is a symlink file:
     lrwxr-xr-x  1 eason  staff  22 12 Sep 15:10 backend-app/static -> ../frontend-app/static
 
 which the frontend build-chain writes to, and the backend server serves up. 
+
+## Environment
+
+The environment variables needed for the backend-app server during runtime is listed in `backend-app/README.md`.
+
+The following environment variables are needed for the build/test/package/publish process (mostly running Rake commands):
+
+### GITHUB_OAUTH_TOKEN
+
+Obtain this token as per these docs:
+
+- Old doc: https://developer.github.com/apps/building-oauth-apps/authorizing-oauth-apps/
+- New doc: https://docs.github.com/en/free-pro-team@latest/developers/apps/authorizing-oauth-apps
+
+## Build
+
 There is a build system piggy-backing on the Jekyll Gem bundle (`Gemfile`) using 
 Ruby Rake:
 
@@ -27,6 +43,16 @@ $ ./activate.sh
 
 I may add deploy commands as `rake` targets; why not, it's simple to read, 
 write, and run.
+
+## Publish
+
+```
+(.gems) $ bundle exec rake 'publish[some-git-tag]'
+```
+
+The Git tag doesn't have to exist; it will be created if it doesn't exist.
+
+This Rake task is idempotent; it's safe to run it again on the same args.
 
 # License
 
