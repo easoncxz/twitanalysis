@@ -15,5 +15,5 @@ ignore/
 .sass-cache
 _site
 
-# backend binary builds
-*.bdist.tar.gz
+# twitanalysis packages
+built-packages/

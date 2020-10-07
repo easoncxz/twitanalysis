@@ -2,6 +2,7 @@
 task default: [:package]
 
 task package: [:build_frontend, :build_backend] do
+  BUILT_PACKAGES_DIR = 'built-packages'
   def read_cabal_package_version
     version_line = `grep '^\s*version' twitanalysis.cabal`.chomp
     return /:\s*([0-9a-zA-Z.]+)$/.match(version_line.chomp)[1]
@@ -12,7 +13,14 @@ task package: [:build_frontend, :build_backend] do
     version = read_cabal_package_version
     commit = `git rev-list HEAD | head -n 1`.chomp
     local_install_root = `stack path --local-install-root`.chomp
-    out_tar_filename = "twitanalysis-#{version}-#{commit[...8]}.bdist.tar.gz"
+    platform = [
+      `uname -m`.chomp, # x86_64
+      '-',
+      `uname -s`.chomp, # Darwin
+      '-',
+      `uname -r`.chomp, # 17.7.0
+    ].join('')
+    out_tar_filename = "twitanalysis-#{version}-#{commit[...8]}-#{platform}.bdist.tar.gz"
     # Log some output:
     puts "The cabal package is in version: #{version}"
     puts "Naming the binary package: #{out_tar_filename}"
@@ -25,16 +33,21 @@ task package: [:build_frontend, :build_backend] do
     File.rename(out_tar_filename, '../' + out_tar_filename)
     out_tar_filename
   end
-  symlink_name = 'twitanalysis.bdist.tar.gz'
-  if File.exist? symlink_name
-    File.delete(symlink_name)
+  symlink_name = Dir.chdir BUILT_PACKAGES_DIR do
+    FileUtils.mv("../#{out_tar_filename}", out_tar_filename)
+    symlink_name = 'twitanalysis.bdist.tar.gz'
+    if File.exist? symlink_name
+      File.delete(symlink_name)
+    end
+    File.symlink(out_tar_filename, symlink_name)
+    symlink_name
   end
-  File.symlink(out_tar_filename, symlink_name)
-  puts "Backend app built; please look at this file: #{symlink_name}"
+  puts "Backend app built. Please look at this symlink: #{BUILT_PACKAGES_DIR}/#{symlink_name}"
 end
 
 task build_frontend: [:install_frontend_deps] do
   Dir.chdir 'frontend-app/' do
+    system 'yarn install'
     system 'yarn build'
   end
 end
