@@ -103,6 +103,12 @@ task package: [:build_frontend, :build_backend] do
   puts "Backend app built. Please look at this symlink: #{BUILT_PACKAGES_DIR}/#{symlink_name}"
 end
 
+task build_backend: [:install_backend_deps] do
+  Dir.chdir 'backend-app/' do
+    system 'stack build --no-terminal'
+  end
+end
+
 task build_frontend: [:install_frontend_deps] do
   Dir.chdir 'frontend-app/' do
     system 'yarn install'
@@ -110,9 +116,9 @@ task build_frontend: [:install_frontend_deps] do
   end
 end
 
-task build_backend: [:install_backend_deps] do
+task test_backend: [:build_backend] do
   Dir.chdir 'backend-app/' do
-    system 'stack build'
+    system 'stack test --no-terminal'
   end
 end
 
