@@ -65,27 +65,31 @@ task package: [:build_frontend, :build_backend, :test_fronend, :test_backend] do
     version_line = `grep '^\s*version' twitanalysis.cabal`.chomp
     return /:\s*([0-9a-zA-Z.]+)$/.match(version_line.chomp)[1]
   end
+  def read_npm_package_version
+    j = JSON.parse(File.read('frontend-app/package.json'))
+    return j['version']
+  end
   puts "Hello, Rake is running: build_backend"
   out_tar_filename = Dir.chdir 'backend-app/' do
     # Define some variables:
-    version = read_cabal_package_version
+    cabal_version = read_cabal_package_version
+    npm_version = read_npm_package_version
     commit = `git rev-list HEAD | head -n 1`.chomp
     local_install_root = `stack path --local-install-root`.chomp
     platform = [
       `uname -m`.chomp, # x86_64
-      '-',
       `uname -s`.chomp, # Darwin
-      '-',
-      `uname -r`.chomp, # 17.7.0
-    ].join('')
-    out_tar_filename = "twitanalysis-#{version}-#{commit[...7]}-#{platform}.bdist.tar.gz"
+      # `uname -r`.chomp, # 17.7.0
+    ].join('-')
+    out_tar_filename = "twitanalysis-#{cabal_version}-#{npm_version}-#{commit[...7]}-#{platform}.bdist.tar.gz"
     # Log some output:
-    puts "The cabal package is in version: #{version}"
+    puts "The cabal package is in version: #{cabal_version}"
     puts "Naming the binary package: #{out_tar_filename}"
     # Do file operations:
     if File.exist? out_tar_filename
       File.delete(out_tar_filename)
     end
+    # (Following the `static` symlink)
     FileUtils.cp_r('static', local_install_root, remove_destination: true) # Just shove it in
     system("tar -C '#{local_install_root}' -czvf '#{out_tar_filename}' .")
     File.rename(out_tar_filename, '../' + out_tar_filename)
