@@ -56,7 +56,7 @@ task :publish, [:tag] => [:package] do |t, args|
   puts "Release URL: #{release.html_url}"
 end
 
-task package: [:build_frontend, :build_backend] do
+task package: [:build_frontend, :build_backend, :test_fronend, :test_backend] do
   BUILT_PACKAGES_DIR = 'built-packages'
   unless Dir.exist? BUILT_PACKAGES_DIR
     Dir.mkdir BUILT_PACKAGES_DIR
@@ -103,18 +103,20 @@ task package: [:build_frontend, :build_backend] do
   puts "Backend app built. Please look at this symlink: #{BUILT_PACKAGES_DIR}/#{symlink_name}"
 end
 
-task build_backend: [:install_backend_deps] do
+task build_backend: [:install_backend_tools] do
   Dir.chdir 'backend-app/' do
     system 'stack build --no-terminal'
   end
 end
 
-task build_frontend: [:install_frontend_deps] do
+task build_frontend: [:install_frontend_tools] do
   Dir.chdir 'frontend-app/' do
     system 'yarn install'
     system 'yarn build'
   end
 end
+
+task test: [:test_fronend, :test_backend]
 
 task test_backend: [:build_backend] do
   Dir.chdir 'backend-app/' do
@@ -122,7 +124,13 @@ task test_backend: [:build_backend] do
   end
 end
 
-task :install_backend_deps do
+task test_fronend: [:install_frontend_tools] do
+  Dir.chdir 'frontend-app/' do
+    system 'yarn test'
+  end
+end
+
+task :install_backend_tools do
   # check for stack; install if missing
   if `which stack`.chomp.empty?
     # https://docs.haskellstack.org/en/stable/install_and_upgrade/
@@ -131,10 +139,14 @@ task :install_backend_deps do
   end
 end
 
-task :install_frontend_deps do
+task :install_frontend_tools do
   if `which yarn`.chomp.empty?
     # https://classic.yarnpkg.com/en/docs/install/
     puts 'Installing Yarn...'
     system 'curl -o- -L https://yarnpkg.com/install.sh | bash'
+  end
+  if `which nodenv`.chomp.empty?
+    puts "We need nodenv, but we don't know how to install it for you."
+    Process.exit 1
   end
 end
