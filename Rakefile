@@ -70,7 +70,7 @@ task package: [:build_frontend, :build_backend] do
       '-',
       `uname -r`.chomp, # 17.7.0
     ].join('')
-    out_tar_filename = "twitanalysis-#{version}-#{commit[...8]}-#{platform}.bdist.tar.gz"
+    out_tar_filename = "twitanalysis-#{version}-#{commit[...7]}-#{platform}.bdist.tar.gz"
     # Log some output:
     puts "The cabal package is in version: #{version}"
     puts "Naming the binary package: #{out_tar_filename}"
