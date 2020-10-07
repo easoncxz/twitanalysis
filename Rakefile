@@ -150,7 +150,16 @@ task :install_frontend_tools do
     system 'curl -o- -L https://yarnpkg.com/install.sh | bash'
   end
   if `which nodenv`.chomp.empty?
-    puts "We need nodenv, but we don't know how to install it for you."
-    Process.exit 1
+    puts "Installing Nodenv using nodenv-installer... (will it work?)"
+    system 'curl -fsSL https://raw.githubusercontent.com/nodenv/nodenv-installer/master/bin/nodenv-installer | bash'
+    puts "Setting PATH env for this process..."
+    home = ENV['HOME']
+    nodenv_path = ["#{home}/.nodenv/shims", "#{home}/.nodenv/bin"]
+    ENV['PATH'] = nodenv_path.join(':') + ':' + ENV['PATH']
+    system 'which nodenv'
+    system 'which node'
+    Dir.chdir 'frontend-app/' do
+      system 'nodenv install --skip-existing'
+    end
   end
 end
