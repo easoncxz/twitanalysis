@@ -118,20 +118,17 @@ end
 
 task :install_backend_deps do
   # check for stack; install if missing
-  if system 'which stack'
-    puts "Your system already has Haskell Stack"
-  else
+  if `which stack`.chomp.empty?
     # https://docs.haskellstack.org/en/stable/install_and_upgrade/
-    puts 'Apparently requires sudo?'
-    sytem 'curl -sSL https://get.haskellstack.org/ | sh'
+    puts 'Installing Haskell Stack... (It allegedly requires sudo?)'
+    system 'curl -sSL https://get.haskellstack.org/ | sh'
   end
 end
 
 task :install_frontend_deps do
-  if system 'which yarn'
-    puts "Your system already has Yarn installed."
-  else
-    puts "Sorry we don't know how to install Yarn."
-    exist 1
+  if `which yarn`.chomp.empty?
+    # https://classic.yarnpkg.com/en/docs/install/
+    puts 'Installing Yarn...'
+    system 'curl -o- -L https://yarnpkg.com/install.sh | bash'
   end
 end
