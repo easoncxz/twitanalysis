@@ -33,8 +33,10 @@ jobs:
         run: 'which ruby && ruby --version'
         shell: bash
 
-      - name: 'Install Bundler'
-        run: './activate.sh gem install bundler'
+      - name: 'Install Bundler and Gems'
+        run: |
+          ./activate.sh gem install bundler
+          ./activate.sh bundle install
         shell: bash
 
       - name: 'Build, test, and package'
