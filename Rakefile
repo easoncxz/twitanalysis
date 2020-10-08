@@ -149,17 +149,20 @@ task :install_frontend_tools do
     puts 'Installing Yarn...'
     system 'curl -o- -L https://yarnpkg.com/install.sh | bash'
   end
-  if `which nodenv`.chomp.empty?
-    puts "Installing Nodenv using nodenv-installer... (will it work?)"
-    system 'curl -fsSL https://raw.githubusercontent.com/nodenv/nodenv-installer/master/bin/nodenv-installer | bash'
-    puts "Setting PATH env for this process..."
-    home = ENV['HOME']
-    nodenv_path = ["#{home}/.nodenv/shims", "#{home}/.nodenv/bin"]
-    ENV['PATH'] = nodenv_path.join(':') + ':' + ENV['PATH']
-    system 'which nodenv'
-    system 'which node'
-    Dir.chdir 'frontend-app/' do
-      system 'nodenv install --skip-existing'
-    end
-  end
+  ## Don't demand nodenv. It's super slow on CI, and Github Actions
+  ## already has a mechanism to set up specified NodeJS versions via
+  ## the `actions/setup-node` Action.
+  #if `which nodenv`.chomp.empty?
+  #  puts "Installing Nodenv using nodenv-installer... (will it work?)"
+  #  system 'curl -fsSL https://raw.githubusercontent.com/nodenv/nodenv-installer/master/bin/nodenv-installer | bash'
+  #  puts "Setting PATH env for this process..."
+  #  home = ENV['HOME']
+  #  nodenv_path = ["#{home}/.nodenv/shims", "#{home}/.nodenv/bin"]
+  #  ENV['PATH'] = nodenv_path.join(':') + ':' + ENV['PATH']
+  #  system 'which nodenv'
+  #  system 'which node'
+  #  Dir.chdir 'frontend-app/' do
+  #    system 'nodenv install --skip-existing'
+  #  end
+  #end
 end
