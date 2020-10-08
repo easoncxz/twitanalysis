@@ -25,6 +25,13 @@ jobs:
           # should match .ruby-version
           ruby-version: '2.7'
 
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack/
+            backend-app/.stack-work/
+          key: ${{ runner.os }}-${{ hashFiles('backend-app/app/**/*.hs', 'backend-app/src/**/*.hs', 'backend-app/test/**/*.hs') }}
+
       - name: 'which node'
         run: 'which node && node --version'
         shell: bash
