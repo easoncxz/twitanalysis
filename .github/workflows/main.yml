@@ -9,26 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/actions/checkout
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       # https://github.com/actions/setup-node/
-      - uses: actions/setup-node@v2-beta
+      - name: Set NodeJS version
+        uses: actions/setup-node@v2-beta
         with:
           # should match frontend-app/.node-version
           node-version: '14.9.0'
 
       # https://github.com/actions/setup-ruby
-      - uses: actions/setup-ruby@v1
+      - name: Set Ruby version
+        uses: actions/setup-ruby@v1
         with:
           # should match .ruby-version
           ruby-version: '2.7'
-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.stack/
-            backend-app/.stack-work/
-          key: ${{ runner.os }}-${{ hashFiles('backend-app/app/**/*.hs', 'backend-app/src/**/*.hs', 'backend-app/test/**/*.hs') }}
 
       - name: 'which node'
         run: 'which node && node --version'
@@ -38,12 +34,26 @@ jobs:
         run: 'which ruby && ruby --version'
         shell: bash
 
+      - name: Cache for Ruby Gems
+        uses: actions/cache@v2
+        with:
+          path: .gems
+          key: ${{ runner.os }}-${{ hashFiles('Gemfile.lock') }}
+
       - name: 'Install Bundler and Gems'
         run: |
           ./activate.sh gem install bundler
           ./activate.sh bundle install
         shell: bash
 
-      - name: 'Run Rake'
+      - name: Cache for Haskell Stack
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack/
+            backend-app/.stack-work/
+          key: ${{ runner.os }}-${{ hashFiles('backend-app/app/**/*.hs', 'backend-app/src/**/*.hs', 'backend-app/test/**/*.hs') }}
+
+      - name: 'Run Rake: default'
         run: './activate.sh bundle exec rake'
         shell: bash
