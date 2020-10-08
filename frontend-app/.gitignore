@@ -12,5 +12,8 @@ node_modules
 # Rollup output
 static/**/*.js
 
+# Not sure how to set up Babel:
+!static/react-playground.js
+
 # TypeScript tsc output
 ts-out/**

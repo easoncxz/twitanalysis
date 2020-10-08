@@ -31,5 +31,6 @@ function synonymousTsOut(input) {
 }
 
 export default [
+  roll(...synonymousTsOut('initial-js-playground.js')),
   roll(...synonymousTsOut('main.js')),
 ];

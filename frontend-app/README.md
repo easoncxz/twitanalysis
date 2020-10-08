@@ -69,7 +69,10 @@ The build steps are defined as
 invoked via `yarn` or `npm run`:
 
     $ yarn build    # Perform a one-off build of everything
-    $ yarn dev      # Start a long-running process to watch for changes
+    $ yarn watch    # Start a long-running process to watch for changes
+
+Note that `yarn watch` doesn't start any HTTP server. You'll need to run one
+separately.
 
 The build is step-by-step like a waterfall:
 
@@ -79,10 +82,11 @@ The build is step-by-step like a waterfall:
 Then the backend server will use some `../something` path to reach over into 
 this `static/` directory to find the build output to serve.
 
-As such, during development of this app, it makes sense to not launch the 
+As such, during development of this app, it may make sense to not launch the
 Haskell backend server at all, and just use any HTTP static server, like the
-one in the Python built-in libraries. Indeed, my `package.json` 
-`npm-run-scripts` do use the `python3` command.
+one in the Python built-in libraries. However, if completing the OAuth
+login-flows, which involves the backend necessarily, then running the
+backend-app in dev mode in another directory/terminal would also do.
 
 If and when it makes sense, I may:
 
