@@ -2,6 +2,10 @@
 require 'json'
 require 'octokit'
 
+def die(*args, **kwargs)
+  system(*args, **kwargs) || exit!(1)
+end
+
 task default: [:package]
 
 # Args and deps:
@@ -109,14 +113,14 @@ end
 
 task build_backend: [:install_backend_tools] do
   Dir.chdir 'backend-app/' do
-    system 'stack build --no-terminal'
+    die 'stack build --no-terminal'
   end
 end
 
 task build_frontend: [:install_frontend_tools] do
   Dir.chdir 'frontend-app/' do
-    system 'yarn install'
-    system 'yarn build'
+    die 'yarn install'
+    die 'yarn build'
   end
 end
 
@@ -124,13 +128,13 @@ task test: [:test_fronend, :test_backend]
 
 task test_backend: [:build_backend] do
   Dir.chdir 'backend-app/' do
-    system 'stack test --no-terminal'
+    die 'stack test --no-terminal'
   end
 end
 
 task test_fronend: [:install_frontend_tools] do
   Dir.chdir 'frontend-app/' do
-    system 'yarn test'
+    die 'yarn test'
   end
 end
 
