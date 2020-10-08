@@ -1,0 +1,67 @@
+name: Publish workflow
+on:
+  create:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    # Only when creating a tag
+    #   - `github` context: https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions#github-context
+    if: ${{ github.event.ref_type == 'tag' }}
+
+    steps:
+      # https://github.com/actions/checkout
+      - uses: actions/checkout@v2
+
+      - name: 'Show tag'
+        run: echo ${{ github.event.ref }}
+
+      # https://github.com/actions/setup-node/
+      - uses: actions/setup-node@v2-beta
+        with:
+          # should match frontend-app/.node-version
+          node-version: '14.9.0'
+
+      # https://github.com/actions/setup-ruby
+      - uses: actions/setup-ruby@v1
+        with:
+          # should match .ruby-version
+          ruby-version: '2.7'
+
+      - name: 'which node'
+        run: 'which node && node --version'
+        shell: bash
+
+      - name: 'which ruby'
+        run: 'which ruby && ruby --version'
+        shell: bash
+
+      - name: 'Install Bundler and Gems'
+        run: |
+          ./activate.sh gem install bundler
+          ./activate.sh bundle install
+        shell: bash
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack/
+            backend-app/.stack-work/
+          key: ${{ runner.os }}-${{ hashFiles('backend-app/app/**/*.hs', 'backend-app/src/**/*.hs', 'backend-app/test/**/*.hs') }}
+
+      # Docs:
+      #
+      #   - event_name: https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions#contexts
+      #
+      #   - create event: https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads#create
+      - name: 'Publish as Github Release'
+        run: "./activate.sh bundle exec rake 'publish[${{ github.event.ref }}]'"
+        env:
+          # Convert Github's env-var into one understook by my Rakefile
+          #
+          # Docs:
+          #   - https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions#github-context
+          GITHUB_OAUTH_TOKEN: "${{ github.token }}"
+
+

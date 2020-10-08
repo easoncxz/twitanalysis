@@ -1,13 +1,11 @@
-name: Main Workflow
+name: Daily Workflow
 on:
   push:
     branches:
       - master
-    tags:
-      - '*'
 
 jobs:
-  sample-job:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/actions/checkout
@@ -46,21 +44,6 @@ jobs:
           ./activate.sh bundle install
         shell: bash
 
-      - name: 'Build, test, and package'
+      - name: 'Run Rake'
         run: './activate.sh bundle exec rake'
         shell: bash
-
-        # Docs:
-        #
-        #   - event_name: https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions#contexts
-        #
-        #   - create event: https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads#create
-      - name: 'Publish as Github Release'
-        run: "./activate.sh bundle exec rake 'publish[${{ github.event.ref }}]'"
-        if: github.event_name == 'create' && github.event.ref_type == 'tag'
-        env:
-          # Convert Github's env-var into one understook by my Rakefile
-          #
-          # Docs:
-          #   - https://docs.github.com/en/free-pro-team@latest/actions/reference/context-and-expression-syntax-for-github-actions#github-context
-          GITHUB_OAUTH_TOKEN: "${{ github.token }}"
