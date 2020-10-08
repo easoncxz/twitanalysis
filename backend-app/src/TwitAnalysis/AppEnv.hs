@@ -59,7 +59,7 @@ newEnv = do
   envHttpMan <- HttpClient.newManager Tls.tlsManagerSettings
   let baseUrl = "http://localhost:" ++ show envPort
   let envOAuthCallbackPath = "/oauth-callback"
-      envHomePagePath = "/home"
+      envHomePagePath = "/app.html" -- connect through to frontend via static
       envLoginPath = "/login"
   envAuthEnv <-
     Auth.newEnv

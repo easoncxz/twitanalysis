@@ -33,7 +33,8 @@ scottyApp Env { envAuthEnv
   Scotty.get
     (s envOAuthCallbackPath)
     (LoginFlow.handleOAuthCallback envLoginEnv envAuthEnv envHomePagePath)
-  Scotty.get (s envHomePagePath) (LoginFlow.viewHome envLoginPath envLoginEnv)
+  -- Fall-through to front-end via static:
+  -- Scotty.get (s envHomePagePath) (LoginFlow.viewHome envLoginPath envLoginEnv)
   Butler.registerButlerRoutes envButlerEnv
   Scotty.get
     "/whoami"
