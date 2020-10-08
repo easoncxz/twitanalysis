@@ -57,34 +57,33 @@ task :publish, [:tag] => [:package] do |t, args|
   puts "Release URL: #{release.html_url}"
 end
 
-task package: [:build_frontend, :build_backend, :test_fronend, :test_backend] do
-  BUILT_PACKAGES_DIR = 'built-packages'
-  unless Dir.exist? BUILT_PACKAGES_DIR
-    Dir.mkdir BUILT_PACKAGES_DIR
-  end
-  def read_cabal_package_version
-    version_line = `grep '^\s*version' twitanalysis.cabal`.chomp
-    return /:\s*([0-9a-zA-Z.]+)$/.match(version_line.chomp)[1]
-  end
-  def read_npm_package_version
-    j = JSON.parse(File.read('frontend-app/package.json'))
-    return j['version']
-  end
-  puts "Hello, Rake is running: build_backend"
-  out_tar_filename = Dir.chdir 'backend-app/' do
+task package: [:build_frontend, :test_fronend, :build_backend, :test_backend] do
+  puts "Hello, Rake is running: package"
+  # Define some variables:
+  built_packages_dir = 'built-packages'
+  cabal_version =
+    begin
+      version_line = `grep '^\s*version' backend-app/twitanalysis.cabal`.chomp
+      /:\s*([0-9a-zA-Z.]+)$/.match(version_line.chomp)[1]
+    end
+  npm_version =
+    begin
+      j = JSON.parse(File.read('frontend-app/package.json'))
+      j['version']
+    end
+  commit_hash = `git rev-list HEAD | head -n 1`.chomp
+  platform = [
+    `uname -m`.chomp, # x86_64
+    `uname -s`.chomp, # Darwin
+    # `uname -r`.chomp, # 17.7.0
+  ].join('-')
+  tar = Dir.chdir 'backend-app/' do
     # Define some variables:
-    cabal_version = read_cabal_package_version
-    npm_version = read_npm_package_version
-    commit = `git rev-list HEAD | head -n 1`.chomp
     local_install_root = `stack path --local-install-root`.chomp
-    platform = [
-      `uname -m`.chomp, # x86_64
-      `uname -s`.chomp, # Darwin
-      # `uname -r`.chomp, # 17.7.0
-    ].join('-')
-    out_tar_filename = "twitanalysis-#{cabal_version}-#{npm_version}-#{commit[...7]}-#{platform}.bdist.tar.gz"
+    out_tar_filename = "twitanalysis-#{cabal_version}-#{npm_version}-#{commit_hash[...7]}-#{platform}.bdist.tar.gz"
     # Log some output:
-    puts "The cabal package is in version: #{cabal_version}"
+    puts "The cabal package has version: #{cabal_version}"
+    puts "The npm package has version: #{npm_version}"
     puts "Naming the binary package: #{out_tar_filename}"
     # Do file operations:
     if File.exist? out_tar_filename
@@ -93,19 +92,19 @@ task package: [:build_frontend, :build_backend, :test_fronend, :test_backend] do
     # (Following the `static` symlink)
     FileUtils.cp_r('static', local_install_root, remove_destination: true) # Just shove it in
     system("tar -C '#{local_install_root}' -czvf '#{out_tar_filename}' .")
-    File.rename(out_tar_filename, '../' + out_tar_filename)
+    FileUtils.mv(out_tar_filename, '..')
     out_tar_filename
   end
-  symlink_name = Dir.chdir BUILT_PACKAGES_DIR do
-    FileUtils.mv("../#{out_tar_filename}", out_tar_filename)
+  unless Dir.exist? built_packages_dir
+    Dir.mkdir built_packages_dir
+  end
+  FileUtils.mv(tar, built_packages_dir)
+  sym = Dir.chdir built_packages_dir do
     symlink_name = 'twitanalysis.bdist.tar.gz'
-    if File.exist? symlink_name
-      File.delete(symlink_name)
-    end
-    File.symlink(out_tar_filename, symlink_name)
+    FileUtils.ln_s(tar, symlink_name, force: true)
     symlink_name
   end
-  puts "Backend app built. Please look at this symlink: #{BUILT_PACKAGES_DIR}/#{symlink_name}"
+  puts "Backend app built. Please look at this symlink: #{built_packages_dir}/#{sym}"
 end
 
 task build_backend: [:install_backend_tools] do
