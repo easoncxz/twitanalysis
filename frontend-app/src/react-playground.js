@@ -1,18 +1,38 @@
 
-/* global React, ReactDOM, Redux, ReduxThunk */
 
-//import React from 'react';
-//import ReactDOM from 'react-dom';
-//import Redux from 'redux';
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import Redux from 'redux';
 //import ReduxThunk from 'redux-thunk';
 //const thunk = ReduxThunk.default;
 
+// This TypeScript documentation page is gold:
+//
+//    https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html#typedef-callback-and-param
+
+/**
+ * @typedef {{
+ *  cancelHandle: NodeJS.Timeout | undefined,
+ *  now: Date,
+ * }} Model
+ */
+
+/**
+ * @type {Model}
+ */
 const init = {
   cancelHandle: undefined,
   now: new Date(),
 };
 
+/**
+ * @type {Redux.Reducer<Model, Action>}
+ */
 const reducer = (current, action) => {
+  if (!current) {
+    return init;
+  }
   switch (action.type) {
   case 'tick':
     return {
@@ -27,19 +47,44 @@ const reducer = (current, action) => {
   case 'stop_clock':
     return {
       ...current,
-      cancelHandle: action.cancelHandle,
+      cancelHandle: undefined,
     };
   default:
     return current;
   }
 };
 
+/**
+ * @type {Redux.Store}
+ */
 const store = Redux.createStore(
   reducer,
   init,
   //Redux.applyMiddleware(thunk),
 );
 
+/**
+ * @typedef {({
+ *      type: 'tick',
+ *      timestamp: Date,
+ *    } | {
+ *      type: 'start_clock',
+ *      cancelHandle: NodeJS.Timeout,
+ *    } | {
+ *      type: 'stop_clock',
+ *    }
+ * )} Action
+ *
+ * @typedef {{
+ *  tick(t: Date): Action,
+ *  startClock(): Action,
+ *  stopClock(n: NodeJS.Timeout): Action,
+ * }} ActionCreators
+ */
+
+/**
+ * @type {(_: Redux.Dispatch<Action>) => ActionCreators}
+ */
 const actionsOf = dispatch => ({
   tick(t) {
     return {
@@ -57,15 +102,23 @@ const actionsOf = dispatch => ({
     };
   },
   stopClock(handle) {
+    clearInterval(handle);
     return {
       type: 'stop_clock',
-      cancelHandle: void clearInterval(handle),
     };
   },
 });
 
 
 class Clock extends React.Component {
+  /**
+   * @constructor
+   * @param {{
+   *    model: Model,
+   *    dispatch: Redux.Dispatch<Action>,
+   *    actions: ActionCreators,
+   * }} props
+   */
   constructor(props) {
     super(props);
     this.props = props;
@@ -73,7 +126,8 @@ class Clock extends React.Component {
 
   renderClockDescription() {
     const props = this.props;
-    if (props.model.cancelHandle === undefined) {
+    const h = props.model.cancelHandle;
+    if (h === undefined) {
       return (
         <div>
           <p>(The clock is stopped.)</p>
@@ -87,7 +141,7 @@ class Clock extends React.Component {
         <div>
           <p>(The clock is ticking.)</p>
           <button onClick={
-            () => props.dispatch(props.actions.stopClock(props.model.cancelHandle))
+            () => props.dispatch(props.actions.stopClock(h))
           }>Stop</button>
         </div>
       );

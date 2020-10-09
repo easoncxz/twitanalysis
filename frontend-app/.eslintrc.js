@@ -1,65 +1,70 @@
+// @ts-ignore
 module.exports = {
-  "env": {
-    "browser": true,
-    "es2020": true
+  'env': {
+    'browser': true,
+    'es2020': true
   },
-  "extends": [
-    "eslint:recommended",
-    "plugin:react/recommended",
+  'extends': [
+    'eslint:recommended',
+    'plugin:react/recommended',
   ],
-  "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true
+  'parserOptions': {
+    'ecmaFeatures': {
+      'jsx': true
     },
-    "ecmaVersion": 11,
-    "sourceType": "module"
+    'ecmaVersion': 11,
+    'sourceType': 'module'
   },
-  "plugins": [
-    "react",
+  'plugins': [
+    'react',
   ],
-  "rules": {
-    "indent": [
-      "error",
+  'rules': {
+    'indent': [
+      'error',
       2
     ],
-    "linebreak-style": [
-      "error",
-      "unix"
+    'linebreak-style': [
+      'error',
+      'unix'
     ],
-    "quotes": [
-      "error",
-      "single"
+    'quotes': [
+      'error',
+      'single'
     ],
-    "semi": [
-      "error",
-      "always"
+    'semi': [
+      'error',
+      'always'
     ],
-    "no-unused-vars": [
-      "error",
+    'no-unused-vars': [
+      'error',
       {
-        "varsIgnorePattern": "^_",
-        "argsIgnorePattern": "^_",
+        'varsIgnorePattern': '^_',
+        'argsIgnorePattern': '^_',
       },
     ],
+    'react/prop-types': 'off',
   },
-  "overrides": [
+  'overrides': [
     {
-      "files": ["**/*.ts", "**/*.tsx"],
-      "extends": [
-        "eslint:recommended",
-        "plugin:react/recommended",
-        "plugin:@typescript-eslint/recommended"
+      'files': ['**/*.ts', '**/*.tsx'],
+      'excludedFiles': [
+        '.eslintrc.js',
       ],
-      "parser": "@typescript-eslint/parser",
-      "plugins" : [
-        "@typescript-eslint",
+      'extends': [
+        'eslint:recommended',
+        'plugin:react/recommended',
+        'plugin:@typescript-eslint/recommended'
       ],
-      "rules": {
-        "@typescript-eslint/no-unused-vars": [
-          "error",
+      'parser': '@typescript-eslint/parser',
+      'plugins' : [
+        '@typescript-eslint',
+      ],
+      'rules': {
+        '@typescript-eslint/no-unused-vars': [
+          'error',
           {
-            "varsIgnorePattern": "^_",
-            "argsIgnorePattern": "^_",
+            'varsIgnorePattern': '^_',
+            'argsIgnorePattern': '^_',
           },
         ],
       }
