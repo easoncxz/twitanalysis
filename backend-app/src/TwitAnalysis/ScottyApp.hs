@@ -75,7 +75,6 @@ startServer = do
   env@Env {envPort} <- newEnv
   Scotty.scotty envPort $ do
     Scotty.middleware logStdout
-    Scotty.middleware Middle.justFavicon
     Scotty.middleware Middle.myStaticMiddleware
     -- Scotty.middleware Middle.showWaiRequest
     scottyApp env

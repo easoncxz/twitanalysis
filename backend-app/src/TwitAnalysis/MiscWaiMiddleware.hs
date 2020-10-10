@@ -18,7 +18,7 @@ favicon =
   Wai.responseFile
     Http.status200
     [("Content-Type", "image/x-icon")]
-    "frontend-app/static/favicon.ico"
+    "static/favicon.ico"
     Nothing
 
 justFavicon :: Wai.Middleware
