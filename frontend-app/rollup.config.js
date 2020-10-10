@@ -25,12 +25,8 @@ function roll(input, output) {
   };
 }
 
-function synonymousTsOut(input) {
-  return [`ts-out/${input}`, `static/${input}`];
-}
-
 const reactPlaygroundBundle = {
-  input: 'src/react-playground.js',
+  input: 'src/playground/react-playground.js',
   external: [
     'react',
     'react-dom',
@@ -57,8 +53,12 @@ const reactPlaygroundBundle = {
   ],
 };
 
+function synonymousTsOut(input) {
+  return [`ts-out/${input}`, `static/${input}`];
+}
+
 export default [
   reactPlaygroundBundle,
-  roll(...synonymousTsOut('initial-js-playground.js')),
   roll(...synonymousTsOut('main.js')),
+  roll(...synonymousTsOut('playground/initial-js-playground.js')),
 ];
