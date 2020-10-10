@@ -1,11 +1,8 @@
 
-// @ts-nocheck
+import React from 'react';
+import ReactDOM from 'react-dom';
+import * as Redux from 'redux';
 
-/*globals React, ReactDOM, Redux */
-
-//import React from 'react';
-//import ReactDOM from 'react-dom';
-//import Redux from 'redux';
 //import ReduxThunk from 'redux-thunk';
 //const thunk = ReduxThunk.default;
 

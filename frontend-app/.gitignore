@@ -13,4 +13,7 @@ node_modules
 static/**/*.js
 
 # TypeScript tsc output
-ts-out/**
+ts-out/
+
+# Babel output
+babel-out/
