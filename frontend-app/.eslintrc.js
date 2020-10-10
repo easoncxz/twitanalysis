@@ -53,7 +53,11 @@ module.exports = {
       'extends': [
         'eslint:recommended',
         'plugin:react/recommended',
-        'plugin:@typescript-eslint/recommended'
+        'plugin:@typescript-eslint/recommended',
+
+        // https://www.robertcooper.me/using-eslint-and-prettier-in-a-typescript-project
+        'prettier/@typescript-eslint',
+        'plugin:prettier/recommended',
       ],
       'parser': '@typescript-eslint/parser',
       'plugins' : [
