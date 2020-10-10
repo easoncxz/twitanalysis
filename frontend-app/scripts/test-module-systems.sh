@@ -10,20 +10,20 @@ if [ -d ts-out ]; then
   rm -rfv ts-out
 fi
 
-yarn ts-node src/nodejs/format-curl-command.ts
+yarn ts-node src/playground/nodejs/format-curl-command.ts
 
 yarn ts-node <<EOF
-import { formatCurlCommand } from './src/nodejs/format-curl-command';
+import { formatCurlCommand } from './src/playground/nodejs/format-curl-command';
 console.log(formatCurlCommand('http://google.com', {body: ''}));
 EOF
 
 # Now compile:
 yarn build
 
-node ts-out/nodejs/format-curl-command.js
+node ts-out/playground/nodejs/format-curl-command.js
 
 node <<EOF
-const oc = require('./ts-out/nodejs/format-curl-command');
+const oc = require('./ts-out/playground/nodejs/format-curl-command');
 console.log(oc.formatCurlCommand('http://google.com', {body: ''}));
 EOF
 
