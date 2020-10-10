@@ -16,4 +16,4 @@ static/**/*.js
 ts-out/
 
 # Babel output
-babel-out/
+bb-out/

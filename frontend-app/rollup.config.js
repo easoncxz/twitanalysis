@@ -33,30 +33,20 @@ function synonymousTsOut(input) {
 }
 
 const reactPlaygroundBundle = {
-  input: 'babel-out/react-playground.js',
+  input: 'src/react-playground.js',
   output: {
     file: 'static/react-playground.js',
     format: 'iife',
     name: 'Rollup_reactPlayground',
   },
   plugins: [
-    // Deal with the JSX
-    // pluginBabel({
-    //   babelHelpers: 'bundled',
-    //   presets: [
-    //     '@babel/preset-env',
-    //     '@babel/preset-react',
-    //   ],
-    // }),
+    // Deal with the JSX (reads `babel.config.js`)
+    pluginBabel({ babelHelpers: 'bundled' }),
     // Find React from node_modules
     pluginNodeResolve(),
     // React is CommonJS (i.e. without "default" member).
     // This adapts cjs modules to es6 modules:
-    pluginCommonjs({
-      // https://www.npmjs.com/package/@rollup/plugin-commonjs
-      // Mentioned by issue comment: https://github.com/rollup/rollup-plugin-commonjs/issues/239#issuecomment-353764860
-      //transformMixedEsModules: true,
-    }),
+    pluginCommonjs(),
     // React reads process.env
     pluginNodejsGlobals(),
     // React uses `require` somewhere

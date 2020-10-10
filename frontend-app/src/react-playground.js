@@ -1,5 +1,8 @@
 
-import React from 'react';
+// https://babeljs.io/docs/en/babel-plugin-transform-react-jsx
+/** @jsx RRR.createElement */
+
+import RRR from 'react';
 import ReactDOM from 'react-dom';
 import * as Redux from 'redux';
 
@@ -109,7 +112,7 @@ const actionsOf = dispatch => ({
 });
 
 
-class Clock extends React.Component {
+class Clock extends RRR.Component {
   /**
    * @constructor
    * @param {{
