@@ -8,7 +8,7 @@ module TwitAnalysis.LoginFlow
   ( Env
   , newEnv
   , handleOAuthCallback
-  , viewLogin
+  , handleLogin
   , viewHome
   , sessionAccessToken
   , sessionAccessCred
@@ -20,7 +20,9 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 import Data.String (IsString, fromString)
 import qualified Data.Text.Lazy as TL
 import Lens.Micro ((^.))
-import qualified Network.HTTP.Types.Status as Http
+import qualified Network.HTTP.Client as HC
+import qualified Network.HTTP.Types as HT
+import qualified Network.HTTP.Types.Status as HTS
 import qualified Network.OAuth.ThreeLegged as OAuthThreeL
 import Network.OAuth.Types.Credentials (Cred, Permanent, Token(Token))
 import qualified Network.OAuth.Types.Credentials as OAuthCred
@@ -29,6 +31,7 @@ import qualified Web.Scotty as Scotty
 import qualified Web.Scotty.Session as Session
 
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
+import qualified TwitAnalysis.ReCaptcha as ReCaptcha
 import TwitAnalysis.Utils (mintercalate)
 
 -- | The data stored per-user, in session storage
@@ -63,14 +66,20 @@ sessionAccessCred env clientCred = do
     token <- maybeToken
     return (OAuthCred.permanentCred token clientCred)
 
-viewLogin :: Env -> Auth.Env -> String -> Scotty.ActionM ()
-viewLogin UnsafeEnv {envSessionMan} authEnv homePagePath = do
+handleLogin :: Env -> Auth.Env -> ReCaptcha.Env -> String -> Scotty.ActionM ()
+handleLogin UnsafeEnv {envSessionMan} authEnv recaptchaEnv homePagePath = do
   maybeSession <- Session.readSession envSessionMan
   case maybeSession of
-    Nothing ->
-      liftIO (Auth.startOAuthFlow' authEnv) >>= \case
-        Auth.OAuthRequestTokenError bs -> Scotty.raw bs
-        Auth.OAuthRedirectToAuthorisationPage url -> Scotty.redirect url
+    Nothing -> do
+      response <- Scotty.param "g-recaptcha-response"
+      liftIO (ReCaptcha.verifyCaptcha recaptchaEnv response) >>= \case
+        ReCaptcha.Rejected -> do
+          Scotty.status HT.status400 {HT.statusMessage = "ReCaptcha failed"}
+          Scotty.html "You didn't pass ReCaptcha."
+        ReCaptcha.Ok ->
+          liftIO (Auth.startOAuthFlow' authEnv) >>= \case
+            Auth.OAuthRequestTokenError bs -> Scotty.raw bs
+            Auth.OAuthRedirectToAuthorisationPage url -> Scotty.redirect url
     Just token
       -- user appears already logged-in
      -> do
@@ -100,7 +109,7 @@ handleOAuthCallback UnsafeEnv {envSessionMan} authEnv homePagePath = do
     renderError = do
       let msg :: IsString s => s
           msg = "Failed to obtain access token."
-      Scotty.status Http.status401 {Http.statusMessage = msg}
+      Scotty.status HTS.status401 {HTS.statusMessage = msg}
       Scotty.html msg
 
 viewHome :: String -> Env -> ActionM ()

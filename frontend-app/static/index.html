@@ -2,9 +2,17 @@
 <html>
   <head>
     <title>TwitAnalysis</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </head>
   <body>
     <h1>Welcome to TwitAnalysis</h1>
-    <a href="/login">Log in with Twitter</a>
+
+    <!-- endpoint matches with route-definitions in TwitAnalysis.ScottyApp -->
+    <form action="/login" method="POST">
+      <div class="g-recaptcha" data-sitekey="6LfsrtUZAAAAAAFSApHL-lwaS_MDZE1wMjhTETnO"></div>
+      <br/>
+      <input type="submit" value="Sign in with Twitter">
+    </form>
+
   </body>
 </html>

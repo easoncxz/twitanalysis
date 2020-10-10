@@ -47,6 +47,7 @@ import qualified Text.Blaze.Html.Renderer.Text as BlazeT
 import Text.Blaze.Html5 (Markup, (!))
 import qualified Web.Scotty as Scotty
 
+import TwitAnalysis.HttpUtils (withEntireResponse)
 import qualified TwitAnalysis.LoginFlow as Login
 import TwitAnalysis.OAuth.Proxy.Internals
   ( parsePathComps
@@ -192,7 +193,7 @@ prepareSignedRequest accessCred srv passthruRoute bodyLbs wreq = do
 sendJsonRequest ::
      HC.Manager -> HC.Request -> Scotty.ActionM (HC.Response Aeson.Value)
 sendJsonRequest httpMan hreq = do
-  hresp <- liftIO $ ApiCallDemo.withEntireResponse hreq httpMan return
+  hresp <- liftIO $ withEntireResponse hreq httpMan return
   let bsl = HC.responseBody hresp
   case Aeson.eitherDecode bsl of
     Left msg -> do

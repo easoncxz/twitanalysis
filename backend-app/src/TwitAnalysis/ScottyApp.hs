@@ -25,11 +25,16 @@ scottyApp Env { envAuthEnv
               , envLoginPath
               , envHttpMan
               , envApiCallDemoEnv
+              , envRecaptchaEnv
               } = do
   Scotty.get "/" (Scotty.redirect "/index.html") -- go to static dir
-  Scotty.get
+  Scotty.post
     (s envLoginPath)
-    (LoginFlow.viewLogin envLoginEnv envAuthEnv envHomePagePath)
+    (LoginFlow.handleLogin
+       envLoginEnv
+       envAuthEnv
+       envRecaptchaEnv
+       envHomePagePath)
   Scotty.get
     (s envOAuthCallbackPath)
     (LoginFlow.handleOAuthCallback envLoginEnv envAuthEnv envHomePagePath)

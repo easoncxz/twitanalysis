@@ -9,7 +9,6 @@ module TwitAnalysis.TwitterApiCallDemo
   , handleCurrentUser
   , showTweetPrompt
   , handleTweetSubmit
-  , withEntireResponse
   ) where
 
 import qualified Blaze.ByteString.Builder as BlazeB
@@ -45,6 +44,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 import qualified Web.Scotty as Scotty
 import qualified Web.Scotty.Session as Session
 
+import TwitAnalysis.HttpUtils (withEntireResponse)
 import qualified TwitAnalysis.LoginFlow as Login
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
 import qualified TwitAnalysis.OAuth.Signing as MySigning
@@ -57,21 +57,6 @@ data Env =
 
 newEnv :: HC.Manager -> IO Env
 newEnv envHttpMan = return (UnsafeEnv {envHttpMan})
-
--- | Help... gather everything into one BSL.ByteString ...
---
--- HELP!! Wanting monad-control MonadBaseControl here but I don't know how to use it.
-withEntireResponse ::
-     HC.Request -> HC.Manager -> (HC.Response BSL.ByteString -> IO a) -> IO a
-withEntireResponse req man cont =
-  HC.withResponse req man $ \response -> do
-    chunks :: [BS.ByteString] <- HC.brConsume . HC.responseBody $ response
-    let bsl = BSL.fromChunks chunks
-    cont (const bsl <$> response)
-
-withResponseLbs :: HC.Request -> HC.Manager -> (BSL.ByteString -> IO a) -> IO a
-withResponseLbs req man cont =
-  withEntireResponse req man (cont . HC.responseBody)
 
 -- | Early-half of request handling
 fetchCurrentUser ::

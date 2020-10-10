@@ -28,6 +28,7 @@ import qualified Text.Read as Read
 import qualified TwitAnalysis.ButlerDemo as Butler
 import qualified TwitAnalysis.LoginFlow as Login
 import qualified TwitAnalysis.OAuth.AuthFlow as Auth
+import qualified TwitAnalysis.ReCaptcha as ReCaptcha
 import qualified TwitAnalysis.TwitterApiCallDemo as ApiCallDemo
 import TwitAnalysis.Utils (mintercalate)
 
@@ -45,6 +46,7 @@ data Env =
     , envLoginEnv :: Login.Env
     , envAuthEnv :: Auth.Env
     , envButlerEnv :: Butler.Env
+    , envRecaptchaEnv :: ReCaptcha.Env
     }
 
 newEnv :: IO Env
@@ -69,6 +71,7 @@ newEnv = do
   envButlerEnv <- Butler.newEnv
   envLoginEnv <- Login.newEnv
   envApiCallDemoEnv <- ApiCallDemo.newEnv envHttpMan
+  envRecaptchaEnv <- ReCaptcha.newEnv envHttpMan
   return
     Env
       { envPort
@@ -80,4 +83,5 @@ newEnv = do
       , envLoginPath
       , envHttpMan
       , envApiCallDemoEnv
+      , envRecaptchaEnv
       }
