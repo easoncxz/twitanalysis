@@ -34,6 +34,10 @@ type Model = {
   sentTweets: Status[];
 };
 
+function prettyUser(user: User): string {
+  return JSON.stringify(user, undefined, 4);
+}
+
 const init: Model = {
   user: undefined,
   pendingTweet: '(initial)',
@@ -60,11 +64,7 @@ const actionsOf = (dispatch: Redux.Dispatch<Msg>): Actions => ({
     };
   },
   fetchMe() {
-    fetch(t('account/verify_credentials'), {
-      headers: {
-        Accept: 'application/json',
-      },
-    })
+    fetch(t('account/verify_credentials.json'))
       .then((r) => r.json())
       .then((user: User) => {
         dispatch({ type: 'receive_me', user });
@@ -147,7 +147,7 @@ function App(props: {
             return (
               <div>
                 <p>You are:</p>
-                <pre>{model.user}</pre>
+                <pre>{prettyUser(model.user)}</pre>
               </div>
             );
           } else {
