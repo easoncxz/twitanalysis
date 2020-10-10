@@ -14,7 +14,7 @@ function App() {
 const mountPoint = document.getElementById('react-mountpoint');
 const renderRoot = () => {
   ReactDOM.render(
-    e(App),
+    <App />,
     mountPoint,
   );
 };
