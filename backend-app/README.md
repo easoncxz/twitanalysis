@@ -60,3 +60,11 @@ Used in `src/TwitAnalysis/AppEnv.hs`. This is where the server will listen.
 
 Used in `src/TwitAnalysis/OAuth/AuthFlow.hs`. Register for this on Twitter.
 Twitter currently isn't making this easy.
+
+### GOOGLE_RECAPTCHA_KEY, GOOGLE_RECAPTCHA_SECRET
+
+Used in `src/TwitAnalysis/ReCaptcha.hs`. Related reading:
+
+- issue: <https://github.com/easoncxz/twitanalysis/issues/13>
+- Google guide docs: <https://developers.google.com/recaptcha/intro>
+- Sign up for keys at: <https://www.google.com/recaptcha/admin/>
