@@ -4,32 +4,18 @@
     <meta charset="UTF-8" />
     <title>Hello World</title>
 
-    <!--
-    <script type="importmap">
+    <!-- Going wild with ES modules! https://jspm.org/ -->
+    <script type="module" src="https://jspm.dev/es-module-shims"></script>
+    <script type="importmap-shim">
       {
         "imports": {
           "react": "https://jspm.dev/react@16",
           "react-dom": "https://jspm.dev/react-dom@16",
           "redux": "https://jspm.dev/redux@4",
-          "redux-thunk": "https://jspm.dev/redux-thunk@2",
+          "redux-thunk": "https://jspm.dev/redux-thunk@2"
         }
       }
     </script>
-
-    <script type="module" src="https://jspm.dev/react@16"></script>
-    <script type="module" src="https://jspm.dev/react-dom@16"></script>
-    <script type="module" src="https://jspm.dev/redux@4"></script>
-    <script type="module" src="https://jspm.dev/redux-thunk@2"></script>
-    -->
-
-    <script src="https://unpkg.com/react@16.13.1/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@16.13.1/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/redux@4.0.5/dist/redux.js"></script>
-    <script src="https://unpkg.com/redux-thunk@2.3.0/dist/redux-thunk.js"></script>
-
-    <!--
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    -->
 
 <style type="text/css">
 code {
@@ -52,9 +38,6 @@ code {
   <body>
     <div id="root"></div>
 
-    <!--
-    <script type="text/babel" src="./react-playground.js"></script>
-    -->
-    <script src="./react-playground.js"></script>
+    <script type="module-shim" src="./react-playground.js"></script>
   </body>
 </html>
