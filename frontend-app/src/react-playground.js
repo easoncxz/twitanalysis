@@ -1,9 +1,11 @@
 
+// @ts-nocheck
 
+/*globals React, ReactDOM, Redux */
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-import Redux from 'redux';
+//import React from 'react';
+//import ReactDOM from 'react-dom';
+//import Redux from 'redux';
 //import ReduxThunk from 'redux-thunk';
 //const thunk = ReduxThunk.default;
 
@@ -151,8 +153,8 @@ class Clock extends React.Component {
   render() {
     const styling =
       this.props.model.cancelHandle === undefined
-        ? { class: 'red-frame' }
-        : { class: 'green-frame' };
+        ? { className: 'red-frame' }
+        : { className: 'green-frame' };
     return (
       <div>
         <h1>The time is currently:</h1>

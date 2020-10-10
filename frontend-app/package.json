@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "ru": "rollup -c",
+    "ru": "rollup -c rollup.config.js",
     "mjs": "find ts-out -name '*.js' -print0 | xargs -0 -n 1 -I @ bash -c 'f=\"@\"; mv \"$f\" \"${f%.js}.mjs\"'",
     "mjs:map": "find ts-out -name '*.js.map' -print0 | xargs -0 -n 1 -I @ bash -c 'f=\"@\"; mv \"$f\" \"${f%.js.map}.mjs.map\"'",
     "build": "tsc && rollup -c",

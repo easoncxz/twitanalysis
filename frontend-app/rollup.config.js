@@ -35,9 +35,11 @@ const reactPlaygroundBundle = {
   input: 'src/react-playground.js',
   output: {
     file: 'static/react-playground.js',
-    format: 'es',
+    format: 'iife',
+    name: 'Rollup_reactPlayground',
   },
   plugins: [
+    // Deal with the JSX:
     pluginBabel({
       babelHelpers: 'bundled',
       presets: [
@@ -45,8 +47,10 @@ const reactPlaygroundBundle = {
         '@babel/preset-react',
       ],
     }),
+    // No bundling; we're using script-tags and global variables.
   ],
 };
+
 export default [
   reactPlaygroundBundle,
   roll(...synonymousTsOut('initial-js-playground.js')),
