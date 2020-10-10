@@ -127,7 +127,7 @@ function reducer(model: Model | undefined, action: Msg): Model {
   }
 }
 
-const store: Redux.Store<Model, Msg> = Redux.createStore(reducer, init);
+const store: Redux.Store<Model, Msg> = Redux.createStore(reducer);
 
 function App(props: {
   model: Model;
@@ -204,7 +204,5 @@ if (
   typeof window === 'object' &&
   typeof window.addEventListener === 'function'
 ) {
-  window.addEventListener('load', () =>
-    store.dispatch(actionsOf(store.dispatch).noop()),
-  );
+  window.addEventListener('load', () => store.dispatch({ type: 'noop' }));
 }
