@@ -64,6 +64,7 @@ module.exports = {
         '@typescript-eslint',
       ],
       'rules': {
+        'react/prop-types': 'off',
         '@typescript-eslint/ban-types': 'off',
         '@typescript-eslint/no-unused-vars': [
           'error',

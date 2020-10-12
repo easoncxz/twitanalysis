@@ -129,63 +129,60 @@ function reducer(model: Model | undefined, action: Msg): Model {
 
 const store: Redux.Store<Model, Msg> = Redux.createStore(reducer);
 
-function App(props: {
+const App: React.FunctionComponent<{
   model: Model;
   dispatch: Redux.Dispatch<Msg>;
   actions: Actions;
-}) {
-  const { model, dispatch, actions } = props;
-  return (
-    <div>
-      <h1>Hello from React</h1>
+}> = ({ model, dispatch, actions }) => (
+  <div>
+    <h1>Hello from React</h1>
 
-      <h1>Fetch own user</h1>
-      {
-        // Fetch user
-        (() => {
-          if (model.user) {
-            return (
-              <div>
-                <p>You are:</p>
-                <pre>{prettyUser(model.user)}</pre>
-              </div>
-            );
-          } else {
-            return (
-              <button onClick={() => dispatch(actions.fetchMe())}>
-                Tell me who I am
-              </button>
-            );
-          }
-        })()
-      }
+    <h1>Fetch own user</h1>
+    {
+      // Fetch user
+      (() => {
+        if (model.user) {
+          return (
+            <div>
+              <p>You are:</p>
+              <pre>{prettyUser(model.user)}</pre>
+            </div>
+          );
+        } else {
+          return (
+            <button onClick={() => dispatch(actions.fetchMe())}>
+              Tell me who I am
+            </button>
+          );
+        }
+      })()
+    }
 
-      <h2>Send tweet</h2>
-      <form action="#">
-        <textarea
-          value={model.pendingTweet}
-          onChange={(e) => {
-            dispatch({ type: 'update_pending_tweet', text: e.target.value });
-          }}
-        ></textarea>
-        <br />
-        <pre>{model.pendingTweet}</pre>
-        <button onClick={() => dispatch(actions.sendTweet(model.pendingTweet))}>
-          Send this tweet
-        </button>
-      </form>
+    <h2>Send tweet</h2>
+    <form action="#">
+      <textarea
+        value={model.pendingTweet}
+        onChange={(e) => {
+          dispatch({ type: 'update_pending_tweet', text: e.target.value });
+        }}
+      ></textarea>
+      <br />
+      <pre>{model.pendingTweet}</pre>
+      <button onClick={() => dispatch(actions.sendTweet(model.pendingTweet))}>
+        Send this tweet
+      </button>
+    </form>
 
-      <p>Sent tweets:</p>
-      <ul>
-        {model.sentTweets.map((st, i) => (
-          <li key={`sentTweets-${i}`}>
-            <code>{st.created_at}</code> - {st.text}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+    <p>Sent tweets:</p>
+    <ul>
+      {model.sentTweets.map((st, i) => (
+        <li key={`sentTweets-${i}`}>
+          <code>{st.created_at}</code> - {st.text}
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 const mountPoint = document.getElementById('react-mountpoint');
 store.subscribe(() => {
