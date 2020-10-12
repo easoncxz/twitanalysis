@@ -29,6 +29,6 @@ EOF
 
 # Extra, actually unreasonable test:
 #   - run the bundle for the browser, in nodejs
-node static/initial-js-playground.js
+node static/playground/initial-js-playground.js
 
 echo "All ok"

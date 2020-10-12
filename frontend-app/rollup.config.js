@@ -34,7 +34,7 @@ const reactPlaygroundBundle = {
     'redux-thunk',
   ],
   output: {
-    file: 'static/react-playground.js',
+    file: 'static/playground/react-playground.js',
     format: 'es', // es, cjs, iife --- all are working
     //name: 'Rollup_reactPlayground',
   },
