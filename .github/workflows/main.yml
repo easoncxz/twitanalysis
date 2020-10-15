@@ -46,19 +46,13 @@ jobs:
           ./activate.sh bundle install
         shell: bash
 
-      - name: Cache for Haskell Stack global cache
+      - name: Cache for Haskell Stack
         uses: actions/cache@v2
         with:
           path: |
             ~/.stack/
-          key: ${{ runner.os }}-${{ hashFiles('backend-app/package.yaml', 'backend-app/stack.yaml') }}
-
-      - name: Cache for Haskell Stack project cache
-        uses: actions/cache@v2
-        with:
-          path: |
             backend-app/.stack-work/
-          key: ${{ runner.os }}-${{ hashFiles('backend-app/app/**/*.hs', 'backend-app/src/**/*.hs', 'backend-app/test/**/*.hs') }}
+          key: ${{ runner.os }}-${{ hashFiles('backend-app/package.yaml', 'backend-app/stack.yaml') }}
 
       - name: 'Run Rake: default'
         run: './activate.sh bundle exec rake'
