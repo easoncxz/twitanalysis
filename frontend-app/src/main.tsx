@@ -1,18 +1,13 @@
 'use strict';
 
+import * as ConnRouter from 'connected-react-router';
+import * as ReactRedux from 'react-redux';
+import * as Redux from 'redux';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import * as Redux from 'redux';
-import { createStore, combineReducers, applyMiddleware, compose } from 'redux';
+import { ConnectedRouter } from 'connected-react-router';
 import { Route, Switch } from 'react-router';
-import {
-  connectRouter,
-  routerMiddleware,
-  ConnectedRouter,
-} from 'connected-react-router';
-import * as ConnRouter from 'connected-react-router';
 import { createHashHistory } from 'history';
-import { Provider } from 'react-redux';
 
 /**
  * Returns any type, instead of returning `never`,
@@ -150,13 +145,13 @@ type MsgOrRouter = Msg | ConnRouter.RouterAction<unknown>;
 
 const hist = createHashHistory();
 
-const store: Redux.Store<ModelAndRouter, MsgOrRouter> = createStore(
-  combineReducers({
+const store: Redux.Store<ModelAndRouter, MsgOrRouter> = Redux.createStore(
+  Redux.combineReducers({
     model: reducer,
-    router: connectRouter(hist),
+    router: ConnRouter.connectRouter(hist),
   }),
   undefined,
-  compose(applyMiddleware(routerMiddleware(hist))),
+  Redux.compose(Redux.applyMiddleware(ConnRouter.routerMiddleware(hist))),
 );
 
 const App: React.FunctionComponent<{
@@ -226,7 +221,7 @@ void app;
 const mountPoint = document.getElementById('react-mountpoint');
 store.subscribe(() => {
   ReactDOM.render(
-    <Provider store={store}>
+    <ReactRedux.Provider store={store}>
       <ConnectedRouter history={hist}>
         <>
           <Switch>
@@ -248,7 +243,7 @@ store.subscribe(() => {
           </Switch>
         </>
       </ConnectedRouter>
-    </Provider>,
+    </ReactRedux.Provider>,
     mountPoint,
   );
 });
