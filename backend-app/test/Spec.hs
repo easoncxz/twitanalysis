@@ -46,6 +46,10 @@ oauthProxyTests =
              in OP.joinPathComps (OP.parsePathComps t) == t &&
                 OP.parsePathComps (OP.joinPathComps (OP.parsePathComps t)) ==
                 OP.parsePathComps t
+        it "can handle a particular string: \"//a\"" $ do
+          let t = "//a"
+          OP.parsePathComps (OP.joinPathComps (OP.parsePathComps t)) `shouldBe`
+            OP.parsePathComps t
     describe "interplay with MiscWaiMiddleware.dropPrefix" $ do
       it "can drop a prefix" $
         Misc.dropPrefix (==) ["foo"] ["foo", "bar"] `shouldBe` ["bar"]
