@@ -2,7 +2,17 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Redux from 'redux';
+import * as Redux from 'redux';
+import { createStore, combineReducers, applyMiddleware, compose } from 'redux';
+import { Route, Switch } from 'react-router';
+import {
+  connectRouter,
+  routerMiddleware,
+  ConnectedRouter,
+} from 'connected-react-router';
+import * as ConnRouter from 'connected-react-router';
+import { createHashHistory } from 'history';
+import { Provider } from 'react-redux';
 
 /**
  * Returns any type, instead of returning `never`,
@@ -36,6 +46,10 @@ type Model = {
 
 function prettyUser(user: User): string {
   return JSON.stringify(user, undefined, 4);
+}
+
+function pretty(o: unknown): string {
+  return JSON.stringify(o, undefined, 4);
 }
 
 const init: Model = {
@@ -127,7 +141,23 @@ function reducer(model: Model | undefined, action: Msg): Model {
   }
 }
 
-const store: Redux.Store<Model, Msg> = Redux.createStore(reducer);
+type ModelAndRouter = Redux.CombinedState<{
+  model: Model;
+  router: ConnRouter.RouterState<unknown>;
+}>;
+
+type MsgOrRouter = Msg | ConnRouter.RouterAction<unknown>;
+
+const hist = createHashHistory();
+
+const store: Redux.Store<ModelAndRouter, MsgOrRouter> = createStore(
+  combineReducers({
+    model: reducer,
+    router: connectRouter(hist),
+  }),
+  undefined,
+  compose(applyMiddleware(routerMiddleware(hist))),
+);
 
 const App: React.FunctionComponent<{
   model: Model;
@@ -184,14 +214,41 @@ const App: React.FunctionComponent<{
   </div>
 );
 
+const app = () => (
+  <App
+    model={store.getState().model}
+    dispatch={store.dispatch}
+    actions={actionsOf(store.dispatch)}
+  />
+);
+void app;
+
 const mountPoint = document.getElementById('react-mountpoint');
 store.subscribe(() => {
   ReactDOM.render(
-    <App
-      model={store.getState()}
-      dispatch={store.dispatch}
-      actions={actionsOf(store.dispatch)}
-    />,
+    <Provider store={store}>
+      <ConnectedRouter history={hist}>
+        <>
+          <Switch>
+            <Route exact path="/" render={app} />
+            <Route
+              exact
+              path="/other"
+              render={() => (
+                <div>
+                  <p>Another path</p>
+                  <p>The current location is:</p>
+                  <pre>{pretty(store.getState().router.location)}</pre>
+                  <button onClick={() => store.dispatch(ConnRouter.push('/'))}>
+                    Go home
+                  </button>
+                </div>
+              )}
+            />
+          </Switch>
+        </>
+      </ConnectedRouter>
+    </Provider>,
     mountPoint,
   );
 });
