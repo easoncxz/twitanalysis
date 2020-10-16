@@ -6,7 +6,6 @@ import * as Redux from 'redux';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { ConnectedRouter } from 'connected-react-router';
-import { Route, Switch } from 'react-router';
 import { createHashHistory } from 'history';
 
 /**
@@ -218,34 +217,28 @@ const app = () => (
 );
 void app;
 
+function routing() {
+  const loc = store.getState().router.location;
+  switch (loc.pathname) {
+    case '/':
+      return <p>Root</p>;
+    case '/other':
+      return (
+        <div>
+          <p>Other</p>
+          <pre>{pretty(loc)}</pre>
+        </div>
+      );
+    case '/app':
+      return app();
+    default:
+      return <p>Default</p>;
+  }
+}
+
 const mountPoint = document.getElementById('react-mountpoint');
 store.subscribe(() => {
-  ReactDOM.render(
-    <ReactRedux.Provider store={store}>
-      <ConnectedRouter history={hist}>
-        <>
-          <Switch>
-            <Route exact path="/" render={app} />
-            <Route
-              exact
-              path="/other"
-              render={() => (
-                <div>
-                  <p>Another path</p>
-                  <p>The current location is:</p>
-                  <pre>{pretty(store.getState().router.location)}</pre>
-                  <button onClick={() => store.dispatch(ConnRouter.push('/'))}>
-                    Go home
-                  </button>
-                </div>
-              )}
-            />
-          </Switch>
-        </>
-      </ConnectedRouter>
-    </ReactRedux.Provider>,
-    mountPoint,
-  );
+  ReactDOM.render(routing(), mountPoint);
 });
 
 console.log('main.tsx here.');
@@ -253,5 +246,14 @@ if (
   typeof window === 'object' &&
   typeof window.addEventListener === 'function'
 ) {
+  // ??? Just connecting up the `hist` with the store with
+  // some event listeners. I'd rather not render at all.
+  ReactDOM.render(
+    <ReactRedux.Provider store={store}>
+      <ConnectedRouter history={hist}></ConnectedRouter>
+    </ReactRedux.Provider>,
+    document.getElementById('router-mountpoint'),
+  );
+
   window.addEventListener('load', () => store.dispatch({ type: 'noop' }));
 }
