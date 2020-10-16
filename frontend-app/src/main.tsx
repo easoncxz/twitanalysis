@@ -36,6 +36,8 @@ type Model = {
   user?: User;
   pendingTweet: string;
   sentTweets: Status[];
+  fetchingMe: boolean;
+  sendingTweet: boolean;
 };
 
 function prettyUser(user: User): string {
@@ -50,14 +52,17 @@ const init: Model = {
   user: undefined,
   pendingTweet: '(initial)',
   sentTweets: [],
+  fetchingMe: false,
+  sendingTweet: false,
 };
 
 type Msg =
-  | { type: 'noop' }
-  | { type: 'fetch_me' }
-  | { type: 'receive_me'; user: User }
+  | { type: 'start_fetch_me' }
+  | { type: 'receive_fetch_me'; user: User }
   | { type: 'update_pending_tweet'; text: string }
-  | { type: 'receive_send_tweet_response'; status: Status };
+  | { type: 'start_send_tweet' }
+  | { type: 'receive_send_tweet'; status: Status }
+  | { type: 'noop' };
 
 type Actions = {
   noop(): Msg;
@@ -75,10 +80,10 @@ const actionsOf = (dispatch: Redux.Dispatch<Msg>): Actions => ({
     fetch(t('account/verify_credentials.json'))
       .then((r) => r.json())
       .then((user: User) => {
-        dispatch({ type: 'receive_me', user });
+        dispatch({ type: 'receive_fetch_me', user });
       });
     return {
-      type: 'fetch_me',
+      type: 'start_fetch_me',
     };
   },
   sendTweet(text: string) {
@@ -93,9 +98,9 @@ const actionsOf = (dispatch: Redux.Dispatch<Msg>): Actions => ({
     })
       .then((r) => r.json())
       .then((status: Status) => {
-        dispatch({ type: 'receive_send_tweet_response', status });
+        dispatch({ type: 'receive_send_tweet', status });
       });
-    return { type: 'noop' };
+    return { type: 'start_send_tweet' };
   },
 });
 
@@ -105,24 +110,35 @@ function reducer(model: Model | undefined, action: Msg): Model {
   }
   switch (action.type) {
     case 'noop':
-    case 'fetch_me':
       return model;
-    case 'receive_me':
+    case 'start_fetch_me':
+      return {
+        ...model,
+        fetchingMe: true,
+      };
+    case 'receive_fetch_me':
       return {
         ...model,
         user: action.user,
+        fetchingMe: false,
       };
     case 'update_pending_tweet':
       return {
         ...model,
         pendingTweet: action.text,
       };
-    case 'receive_send_tweet_response': {
+    case 'start_send_tweet':
+      return {
+        ...model,
+        sendingTweet: true,
+      };
+    case 'receive_send_tweet': {
       const sentTweets = model.sentTweets.slice();
       sentTweets.push(action.status);
       return {
         ...model,
         sentTweets,
+        sendingTweet: false,
       };
     }
     default:
@@ -173,28 +189,48 @@ const App: React.FunctionComponent<{
             </div>
           );
         } else {
-          return (
-            <button onClick={() => dispatch(actions.fetchMe())}>
+          const b = (disabled: boolean) => (
+            <button
+              onClick={() => dispatch(actions.fetchMe())}
+              disabled={disabled}
+            >
               Tell me who I am
             </button>
           );
+          if (model.fetchingMe) {
+            return (
+              <div>
+                <p>Fetching...</p>
+                {b(true)}
+              </div>
+            );
+          } else {
+            return b(false);
+          }
         }
       })()
     }
 
     <h2>Send tweet</h2>
-    <form action="#">
+    <form action="">
       <textarea
         value={model.pendingTweet}
         onChange={(e) => {
           dispatch({ type: 'update_pending_tweet', text: e.target.value });
         }}
+        disabled={model.sendingTweet}
       ></textarea>
       <br />
       <pre>{model.pendingTweet}</pre>
-      <button onClick={() => dispatch(actions.sendTweet(model.pendingTweet))}>
-        Send this tweet
-      </button>
+      <input
+        type="submit"
+        onClick={(e) => {
+          e.preventDefault();
+          dispatch(actions.sendTweet(model.pendingTweet));
+        }}
+        disabled={model.sendingTweet}
+        value="Send this tweet"
+      />
     </form>
 
     <p>Sent tweets:</p>
@@ -236,9 +272,9 @@ function routing() {
   }
 }
 
-const mountPoint = document.getElementById('react-mountpoint');
+const mountpoint = document.getElementById('react-mountpoint');
 store.subscribe(() => {
-  ReactDOM.render(routing(), mountPoint);
+  ReactDOM.render(routing(), mountpoint);
 });
 
 console.log('main.tsx here.');
@@ -246,14 +282,15 @@ if (
   typeof window === 'object' &&
   typeof window.addEventListener === 'function'
 ) {
-  // ??? Just connecting up the `hist` with the store with
-  // some event listeners. I'd rather not render at all.
-  ReactDOM.render(
-    <ReactRedux.Provider store={store}>
-      <ConnectedRouter history={hist}></ConnectedRouter>
-    </ReactRedux.Provider>,
-    document.getElementById('router-mountpoint'),
-  );
-
-  window.addEventListener('load', () => store.dispatch({ type: 'noop' }));
+  window.addEventListener('load', () => {
+    // ??? Just connecting up the `hist` with the store with
+    // some event listeners. I'd rather not render at all.
+    ReactDOM.render(
+      <ReactRedux.Provider store={store}>
+        <ConnectedRouter history={hist}></ConnectedRouter>
+      </ReactRedux.Provider>,
+      document.getElementById('router-mountpoint'),
+    );
+    store.dispatch({ type: 'noop' });
+  });
 }
