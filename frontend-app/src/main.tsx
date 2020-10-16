@@ -19,7 +19,6 @@ type ModelAndRouter = Redux.CombinedState<{
 type MsgOrRouter = Msg | ConnRouter.RouterAction<unknown>;
 
 const hist = createHashHistory();
-
 const store: Redux.Store<ModelAndRouter, MsgOrRouter> = Redux.createStore(
   Redux.combineReducers({
     model: reducer,
@@ -34,10 +33,9 @@ store.subscribe(() => {
   ReactDOM.render(routing(parsePage(store.getState().router)), mountpoint);
 });
 
-if (
-  typeof window === 'object' &&
-  typeof window.addEventListener === 'function'
-) {
+if (typeof window === 'object') {
+  (window as any).hist = hist; //eslint-disable-line @typescript-eslint/no-explicit-any
+
   window.addEventListener('load', () => {
     // ??? Just connecting up the `hist` with the store with
     // some event listeners. I'd rather not render at all.

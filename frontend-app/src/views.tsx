@@ -80,13 +80,6 @@ export const App: React.FunctionComponent<{
   </div>
 );
 
-const foo: React.ReactElement<{ foo: number }> = React.createElement(
-  'p',
-  { foo: 3 },
-  [],
-);
-void foo;
-
 export function routing(page: Page): React.ReactElement {
   switch (page) {
     case Page.Home:
