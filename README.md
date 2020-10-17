@@ -9,14 +9,38 @@ An experiment-lab for building Twitter tools using the Twitter v1.1 REST API.
 
 [gh-pages]: https://easoncxz.github.io/twitanalysis
 
-# Dev workflow and tooling
+# Dev workflow
+
+## Static files
 
 Currently not well defined. The critical link is a symlink file:
 
-    $ ls -l backend-app/static
-    lrwxr-xr-x  1 eason  staff  22 12 Sep 15:10 backend-app/static -> ../frontend-app/static
+    $ readlink backend-app/static
+    ../frontend-app/static
 
 which the frontend build-chain writes to, and the backend server serves up. 
+
+## SSL during development
+
+This is so that I can use `Secure` cookies while not changing code between
+development and production.
+
+The key link is defined in a reverse-proxy SSL-termination in a Git submodule:
+
+- `frontend-app/secure/`
+
+Run the Haskell server, which listens to HTTP:
+
+    $ cd backend-app/
+    $ stack run     # or equivalent command
+
+Then concurrently run this other process to set up an HTTPS server to forward
+to the Haskell one:
+
+    $ cd frontend-app/
+    $ yarn ssl
+
+## Tooling
 
 Lots of tools. Probably need to be manually installed:
 
