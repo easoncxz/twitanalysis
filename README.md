@@ -45,13 +45,16 @@ to the Haskell one:
 Lots of tools. Probably need to be manually installed:
 
 - `rbenv`
+- `nodenv`
 - Golang
 
 Probably taken care of by the Rakefile:
 
-- `nodenv`
-- Haskell `stack`
-- All JavaScript/TypeScript things, now that `nodenv` is available
+- Haskell `stack`, which takes care of compilers and libraries;
+- `yarn` and all JavaScript/TypeScript things.
+
+Once you have `rbenv` and `nodenv` installed, you can try the following Rake
+tasks.
 
 ## Build commands
 
@@ -64,6 +67,15 @@ $ ./activate.sh
 (.gems) $ bundle                # Ruby dependencies
 (.gems) $ bundle exec rake  # build everything
 ```
+
+I also wrote up a task to run a development server:
+
+
+    (.gems) $ bundle exec rake dev
+
+With that running, visit <https://localhost:5050> to see the app running. If you
+don't have any valid SSL certificates entrusted into the OS yet, you can also
+try <http://localhost:5000>.
 
 I may add deploy commands as `rake` targets; why not, it's simple to read, 
 write, and run.

@@ -61,7 +61,7 @@ task :publish, [:tag] => [:package] do |t, args|
   puts "Release URL: #{release.html_url}"
 end
 
-task package: [:build_frontend, :test_fronend, :build_backend, :test_backend] do
+task package: [:build, :test] do
   puts "Hello, Rake is running: package"
   # Define some variables:
   built_packages_dir = 'built-packages'
@@ -111,6 +111,9 @@ task package: [:build_frontend, :test_fronend, :build_backend, :test_backend] do
   puts "Backend app built. Please look at this symlink: #{built_packages_dir}/#{sym}"
 end
 
+task build: [:build_frontend, :build_backend] do
+end
+
 task build_backend: [:install_backend_tools] do
   Dir.chdir 'backend-app/' do
     die 'stack build --no-terminal'
@@ -124,7 +127,7 @@ task build_frontend: [:install_frontend_tools] do
   end
 end
 
-task test: [:test_fronend, :test_backend]
+task test: [:test_frontend, :test_backend]
 
 task test_backend: [:build_backend] do
   Dir.chdir 'backend-app/' do
@@ -132,10 +135,29 @@ task test_backend: [:build_backend] do
   end
 end
 
-task test_fronend: [:install_frontend_tools] do
+task test_frontend: [:build_frontend] do
   Dir.chdir 'frontend-app/' do
     die 'yarn test'
   end
+end
+
+task dev: [:install_backend_tools, :install_frontend_tools, :build_frontend] do
+  typescriptWatch = Process.fork do
+    Dir.chdir 'frontend-app' do
+      die 'yarn watch'
+    end
+  end
+  sslWatch = Process.fork do
+    Dir.chdir 'frontend-app' do
+      die 'yarn ssl'
+    end
+  end
+  backend = Process.fork do
+    Dir.chdir 'backend-app' do
+      die 'stack run'
+    end
+  end
+  Process.waitall
 end
 
 task :install_backend_tools do
@@ -156,6 +178,10 @@ task :install_frontend_tools do
   ## Don't demand nodenv. It's super slow on CI, and Github Actions
   ## already has a mechanism to set up specified NodeJS versions via
   ## the `actions/setup-node` Action.
+  if `which nodenv`.chomp.empty?
+    puts "Sorry, you'll need to install nodenv manually."
+    Process.exit 1
+  end
   #if `which nodenv`.chomp.empty?
   #  puts "Installing Nodenv using nodenv-installer... (will it work?)"
   #  system 'curl -fsSL https://raw.githubusercontent.com/nodenv/nodenv-installer/master/bin/nodenv-installer | bash'
