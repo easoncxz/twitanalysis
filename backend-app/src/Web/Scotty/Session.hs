@@ -145,7 +145,8 @@ setCookie sess = do
   setHeader "Set-Cookie" $
     "sid=" <>
     TL.fromStrict (sess_id sess) <>
-    "; Path=/; Expires=" <> formattedExp <> "; HttpOnly"
+    "; Path=/; Expires=" <>
+    formattedExp <> "; HttpOnly; Secure; SameSite=Strict"
 
 loadSession ::
      (MonadIO m, ScottyError e)

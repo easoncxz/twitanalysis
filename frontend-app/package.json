@@ -8,6 +8,8 @@
     "mjs:map": "find ts-out -name '*.js.map' -print0 | xargs -0 -n 1 -I @ bash -c 'f=\"@\"; mv \"$f\" \"${f%.js.map}.mjs.map\"'",
     "build": "tsc && rollup -c",
     "watch": "concurrently --kill-others 'tsc --watch' 'rollup -c --watch'",
+    "ssl:install": "cd secure && ( which secure || go build )",
+    "ssl": "yarn ssl:install && ./secure/secure -addr localhost:5050 -cert cert.pem -key key.pem http://localhost:5000",
     "test": "./scripts/test-module-systems.sh"
   },
   "repository": {

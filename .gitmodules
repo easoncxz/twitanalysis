@@ -1,3 +1,6 @@
 [submodule "wiki-repo"]
 	path = wiki-repo
 	url = git@github.com:easoncxz/twitanalysis.wiki.git
+[submodule "frontend-app/secure"]
+	path = frontend-app/secure
+	url = git@github.com:yi-jiayu/secure.git

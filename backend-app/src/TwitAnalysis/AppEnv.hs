@@ -52,6 +52,7 @@ data Env =
 newEnv :: IO Env
 newEnv = do
   let defaultPort = 5000
+      sslPort = 5050
   envPort <-
     do maybeStr <- Sys.lookupEnv "PORT"
        return . Maybe.fromMaybe defaultPort $ do
@@ -60,12 +61,13 @@ newEnv = do
          return num
   envHttpMan <- HttpClient.newManager Tls.tlsManagerSettings
   let baseUrl = "http://localhost:" ++ show envPort
+      sslBaseUrl = "https://localhost:" ++ show sslPort
   let envOAuthCallbackPath = "/oauth-callback"
       envHomePagePath = "/app.html" -- connect through to frontend via static
       envLoginPath = "/login"
   envAuthEnv <-
     Auth.newEnv
-      (Auth.BaseUrl baseUrl)
+      (Auth.BaseUrl sslBaseUrl)
       (Auth.OAuthCallbackPath envOAuthCallbackPath)
       envHttpMan
   envButlerEnv <- Butler.newEnv
