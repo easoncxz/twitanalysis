@@ -5,9 +5,10 @@ import ReactDOM from 'react-dom';
 import { createHashHistory } from 'history';
 
 import * as core from './core';
-import { view } from './views';
 import * as routing from './routing';
-import { typecheckNever } from './utils';
+import { view } from './views';
+import { effectsOf } from './effects';
+import { typecheckNever, Dispatch } from './utils';
 
 type Model = {
   core: core.Model;
@@ -15,24 +16,35 @@ type Model = {
 };
 
 type Msg =
-  | { type: 'core'; msg: core.Msg }
-  | { type: 'routing'; msg: routing.Msg };
+  | { type: 'core'; sub: core.Msg }
+  | { type: 'routing'; sub: routing.Msg };
 
 const liftMsg = {
-  core(msg: core.Msg): Msg {
-    return { type: 'core', msg };
+  core(sub: core.Msg): Msg {
+    return { type: 'core', sub };
   },
-  routing(msg: routing.Msg): Msg {
-    return { type: 'routing', msg };
+  routing(sub: routing.Msg): Msg {
+    return { type: 'routing', sub };
   },
 };
 
-const subDispatch = (dispatch: (m: Msg) => void) => ({
-  core(msg: core.Msg): void {
-    return dispatch(liftMsg.core(msg));
+type Dispatches = {
+  core(m: core.Msg): core.Msg;
+  routing(m: routing.Msg): routing.Msg;
+};
+
+const splitDispatch = (dispatch: Dispatch<Msg>): Dispatches => ({
+  core(m) {
+    // Subtle!!
+    // Cannot return `dispatch(liftMsg.core(m)).sub`, because once
+    // data flows through the bigger `dispatch`, the returned bigger
+    // `Msg` could very well be `routing.Msg` from the other branch!
+    dispatch(liftMsg.core(m));
+    return m;
   },
-  routing(msg: routing.Msg): void {
-    return dispatch(liftMsg.routing(msg));
+  routing(m) {
+    dispatch(liftMsg.routing(m));
+    return m;
   },
 });
 
@@ -44,12 +56,12 @@ const reduce = (init: Model) => (model: Model | undefined, msg: Msg): Model => {
     case 'core':
       return {
         ...model,
-        core: core.reduce(init.core)(model.core, msg.msg),
+        core: core.reduce(init.core)(model.core, msg.sub),
       };
     case 'routing':
       return {
         ...model,
-        routing: routing.reduce(init.routing)(model.routing, msg.msg),
+        routing: routing.reduce(init.routing)(model.routing, msg.sub),
       };
     default:
       typecheckNever(msg);
@@ -68,6 +80,8 @@ const init: Model = {
 
 const store: Redux.Store<Model, Msg> = Redux.createStore(reduce(init));
 
+const dispatches = splitDispatch(store.dispatch);
+
 const render = () =>
   void ReactDOM.render(
     view(core.parseLocation(store.getState().routing.location)),
@@ -75,7 +89,7 @@ const render = () =>
   );
 
 const bootstrap = () => {
-  hist.listen(routing.listener(subDispatch(store.dispatch).routing));
+  hist.listen(routing.listener(dispatches.routing));
   store.subscribe(render);
   render();
 };
@@ -90,7 +104,7 @@ if (typeof window === 'object') {
     get state() {
       return store.getState();
     },
-    dispatch: subDispatch(store.dispatch),
+    effects: effectsOf(dispatches.core),
   };
   window.addEventListener('load', bootstrap);
 }

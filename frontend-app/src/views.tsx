@@ -2,14 +2,14 @@ import React from 'react';
 import type * as Redux from 'redux';
 
 import { Model, Msg, Page } from './core';
-import type { Actions } from './effects';
+import type { Effects } from './effects';
 import { pretty, typecheckNever } from './utils';
 
 export const App: React.FunctionComponent<{
   model: Model;
   dispatch: Redux.Dispatch<Msg>;
-  actions: Actions;
-}> = ({ model, dispatch, actions }) => (
+  effects: Effects;
+}> = ({ model, dispatch, effects }) => (
   <div>
     <h1>Hello from React</h1>
 
@@ -27,7 +27,7 @@ export const App: React.FunctionComponent<{
         } else {
           const b = (disabled: boolean) => (
             <button
-              onClick={() => dispatch(actions.fetchMe())}
+              onClick={() => dispatch(effects.fetchMe())}
               disabled={disabled}
             >
               Tell me who I am
@@ -62,7 +62,7 @@ export const App: React.FunctionComponent<{
         type="submit"
         onClick={(e) => {
           e.preventDefault();
-          dispatch(actions.sendTweet(model.pendingTweet));
+          dispatch(effects.sendTweet(model.pendingTweet));
         }}
         disabled={model.sendingTweet}
         value="Send this tweet"

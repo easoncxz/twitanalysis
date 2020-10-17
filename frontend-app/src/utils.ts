@@ -9,3 +9,5 @@ export function typecheckNever<T>(n: never): T {
 export function pretty(o: unknown): string {
   return JSON.stringify(o, undefined, 4);
 }
+
+export type Dispatch<M> = (m: M) => M;

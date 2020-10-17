@@ -1,15 +1,14 @@
-import type * as Redux from 'redux';
-
-import { Msg } from './core';
+import * as core from './core';
 import { User, Status, t } from './twitter';
+import { Dispatch } from './utils';
 
-export type Actions = {
-  noop(): Msg;
-  fetchMe(): Msg;
-  sendTweet(t: string): Msg;
+export type Effects = {
+  noop(): core.Msg;
+  fetchMe(): core.Msg;
+  sendTweet(t: string): core.Msg;
 };
 
-export const actionsOf = (dispatch: Redux.Dispatch<Msg>): Actions => ({
+export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => ({
   noop() {
     return {
       type: 'noop',
