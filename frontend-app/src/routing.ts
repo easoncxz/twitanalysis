@@ -1,5 +1,4 @@
 import * as history from 'history';
-import type * as Redux from 'redux';
 
 import { typecheckNever } from './utils';
 
@@ -14,14 +13,14 @@ export type Msg =
   | { type: 'update_location'; location: Location }
   | { type: 'noop' };
 
-const noop = (): Msg => ({ type: 'noop' });
+export const noop = (): Msg => ({ type: 'noop' });
 
-export const reduce = (init: history.Location<MyLocationState>) => (
+export const reduce = (init: Model) => (
   model: Model | undefined,
   msg: Msg,
 ): Model => {
   if (model === undefined) {
-    return { location: init };
+    return init;
   }
   switch (msg.type) {
     case 'noop':
@@ -46,15 +45,15 @@ export const effectsOf = (hist: history.History<MyLocationState>): Effects => ({
     hist.push(url);
     return noop();
   },
-  go(_n: number): Msg {
-    console.log("We don't have `history.go` implemented yet");
+  go(n: number): Msg {
+    hist.go(n);
     return noop();
   },
 });
 
-export const listener = (dispatch: Redux.Dispatch<Msg>) => (
+export const listener = <T>(dispatch: (_: Msg) => T) => (
   location: history.Location<MyLocationState>,
-  action: string,
-): Msg => {
-  return dispatch({ type: 'update_location', location, action });
+  _action: string,
+): T => {
+  return dispatch({ type: 'update_location', location });
 };

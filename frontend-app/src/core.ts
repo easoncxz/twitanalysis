@@ -19,7 +19,9 @@ export type Msg =
   | { type: 'receive_send_tweet'; status: Status }
   | { type: 'noop' };
 
-const init: Model = {
+export const noop = (): Msg => ({ type: 'noop' });
+
+export const init: Model = {
   user: undefined,
   pendingTweet: '(initial)',
   sentTweets: [],
@@ -27,7 +29,10 @@ const init: Model = {
   sendingTweet: false,
 };
 
-export function reducer(model: Model | undefined, action: Msg): Model {
+export const reduce = (init: Model) => (
+  model: Model | undefined,
+  action: Msg,
+): Model => {
   if (!model) {
     return init;
   }
@@ -72,7 +77,7 @@ export function reducer(model: Model | undefined, action: Msg): Model {
       typecheckNever(action);
       return model;
   }
-}
+};
 
 export enum Page {
   Home = '/home',

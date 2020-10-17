@@ -80,7 +80,7 @@ export const App: React.FunctionComponent<{
   </div>
 );
 
-export function routing(page: Page): React.ReactElement {
+export function view(page: Page): React.ReactElement {
   switch (page) {
     case Page.Home:
       return <p>Root</p>;
