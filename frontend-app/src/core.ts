@@ -1,37 +1,8 @@
-import type { RouterState, RouterAction } from 'connected-react-router';
-import * as Conn from 'connected-react-router';
+import type * as history from 'history';
 
 import { User, Status } from './twitter';
 import { typecheckNever } from './utils';
 
-export enum Page {
-  Home = '/home',
-  FetchMe = '/fetch-me',
-  SendTweet = '/send-tweet',
-  Unknown = 'unknown',
-}
-
-export function parsePage(router: RouterState<unknown>): Page {
-  switch (router.location.pathname) {
-    case '/':
-      return Page.Home;
-    case '/fetch-me':
-      return Page.FetchMe;
-    case '/send-tweet':
-      return Page.SendTweet;
-    default:
-      return Page.Unknown;
-  }
-}
-
-export function gotoPage(p: Page): RouterAction<unknown> {
-  switch (p) {
-    case Page.Unknown:
-      return Conn.push(p.toString());
-    default:
-      return Conn.push(p);
-  }
-}
 export type Model = {
   user?: User;
   pendingTweet: string;
@@ -100,5 +71,25 @@ export function reducer(model: Model | undefined, action: Msg): Model {
       // semantically it's more sensible to throw an error.
       typecheckNever(action);
       return model;
+  }
+}
+
+export enum Page {
+  Home = '/home',
+  FetchMe = '/fetch-me',
+  SendTweet = '/send-tweet',
+  Unknown = 'unknown',
+}
+
+export function parseLocation(location: history.Location<unknown>): Page {
+  switch (location.pathname) {
+    case '/':
+      return Page.Home;
+    case '/fetch-me':
+      return Page.FetchMe;
+    case '/send-tweet':
+      return Page.SendTweet;
+    default:
+      return Page.Unknown;
   }
 }
