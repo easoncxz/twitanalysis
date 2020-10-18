@@ -8,7 +8,7 @@ import * as core from './core';
 import * as routing from './routing';
 import { view } from './views';
 import { effectsOf } from './effects';
-import { typecheckNever, Dispatch } from './utils';
+import { typecheckNever } from './utils';
 
 type Model = {
   core: core.Model;
@@ -29,11 +29,11 @@ const liftMsg = {
 };
 
 type Dispatches = {
-  core(m: core.Msg): core.Msg;
-  routing(m: routing.Msg): routing.Msg;
+  core: Redux.Dispatch<core.Msg>;
+  routing: Redux.Dispatch<routing.Msg>;
 };
 
-const splitDispatch = (dispatch: Dispatch<Msg>): Dispatches => ({
+const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
   core(m) {
     // Subtle!!
     // Cannot return `dispatch(liftMsg.core(m)).sub`, because once
@@ -82,11 +82,16 @@ const store: Redux.Store<Model, Msg> = Redux.createStore(reduce(init));
 
 const dispatches = splitDispatch(store.dispatch);
 
-const render = () =>
+const render = () => {
   void ReactDOM.render(
-    view(core.parseLocation(store.getState().routing.location)),
+    view(store.getState().routing, {
+      model: store.getState().core,
+      dispatch: dispatches.core,
+      effects: effectsOf(dispatches.core),
+    }),
     mountpoint,
   );
+};
 
 const bootstrap = () => {
   hist.listen(routing.listener(dispatches.routing));

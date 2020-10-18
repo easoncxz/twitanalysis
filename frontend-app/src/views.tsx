@@ -1,101 +1,114 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import type * as Redux from 'redux';
 
-import { Model, Msg, Page } from './core';
+import { Model, Msg, Page, parseLocation } from './core';
 import type { Effects } from './effects';
+import * as Routing from './routing';
 import { pretty, typecheckNever } from './utils';
 
-export const App: React.FunctionComponent<{
+type Props = {
   model: Model;
   dispatch: Redux.Dispatch<Msg>;
   effects: Effects;
-}> = ({ model, dispatch, effects }) => (
-  <div>
-    <h1>Hello from React</h1>
+};
 
-    <h1>Fetch own user</h1>
-    {
-      // Fetch user
-      (() => {
-        if (model.user) {
-          return (
-            <div>
-              <p>You are:</p>
-              <pre>{pretty(model.user)}</pre>
-            </div>
-          );
-        } else {
-          const b = (disabled: boolean) => (
-            <button
-              onClick={() => dispatch(effects.fetchMe())}
-              disabled={disabled}
-            >
-              Tell me who I am
-            </button>
-          );
-          if (model.fetchingMe) {
-            return (
-              <div>
-                <p>Fetching...</p>
-                {b(true)}
-              </div>
-            );
-          } else {
-            return b(false);
-          }
-        }
-      })()
-    }
+function viewFetchMe({ model, dispatch, effects }: Props): ReactElement {
+  return (
+    <div>
+      <h1>Fetch own user</h1>
+      {model.user ? (
+        <div>
+          <p>You are:</p>
+          <pre>{pretty(model.user)}</pre>
+        </div>
+      ) : (
+        <div>
+          {model.fetchingMe ? <p>Fetching...</p> : null}
+          <button
+            onClick={() => dispatch(effects.fetchMe())}
+            disabled={model.fetchingMe}
+          >
+            Tell me who I am
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
-    <h2>Send tweet</h2>
-    <form action="">
-      <textarea
-        value={model.pendingTweet}
-        onChange={(e) => {
-          dispatch({ type: 'update_pending_tweet', text: e.target.value });
-        }}
-        disabled={model.sendingTweet}
-      ></textarea>
-      <br />
-      <pre>{model.pendingTweet}</pre>
-      <input
-        type="submit"
-        onClick={(e) => {
-          e.preventDefault();
-          dispatch(effects.sendTweet(model.pendingTweet));
-        }}
-        disabled={model.sendingTweet}
-        value="Send this tweet"
-      />
-    </form>
+function viewSendTweet({ model, dispatch, effects }: Props): ReactElement {
+  return (
+    <div>
+      <h2>Send tweet</h2>
+      <form action="">
+        <textarea
+          value={model.pendingTweet}
+          onChange={(e) => {
+            dispatch({ type: 'update_pending_tweet', text: e.target.value });
+          }}
+          disabled={model.sendingTweet}
+        ></textarea>
+        <br />
+        <pre>{model.pendingTweet}</pre>
+        <input
+          type="submit"
+          onClick={(e) => {
+            e.preventDefault();
+            dispatch(effects.sendTweet(model.pendingTweet));
+          }}
+          disabled={model.sendingTweet}
+          value="Send this tweet"
+        />
+      </form>
+      <p>Sent tweets:</p>
+      <ul>
+        {model.sentTweets.map((st, i) => (
+          <li key={`sentTweets-${i}`}>
+            <code>{st.created_at}</code> - {st.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
-    <p>Sent tweets:</p>
-    <ul>
-      {model.sentTweets.map((st, i) => (
-        <li key={`sentTweets-${i}`}>
-          <code>{st.created_at}</code> - {st.text}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
-export function view(page: Page): React.ReactElement {
+function viewContent({ location }: Routing.Model, props: Props): ReactElement {
+  const page = parseLocation(location);
   switch (page) {
     case Page.Home:
-      return <p>Root</p>;
+      return <p>Please click through the nav menu!</p>;
     case Page.FetchMe:
-      return (
-        <div>
-          <p>Fetch me</p>
-        </div>
-      );
+      return viewFetchMe(props);
     case Page.SendTweet:
-      return <p>send tweet</p>;
+      return viewSendTweet(props);
     case Page.Unknown:
       return <p>Unknown route.</p>;
     default:
       typecheckNever(page);
       throw new TypeError(`page: never = ${page}`);
   }
+}
+
+function viewLinks(): ReactElement[] {
+  const out = [];
+  for (const [k, v] of Object.entries(Page)) {
+    out.push(
+      <li key={`nav-${k}`}>
+        <a href={'#' + v}>{k}</a>
+      </li>,
+    );
+  }
+  return out;
+}
+
+export function view(routing: Routing.Model, props: Props): ReactElement {
+  return (
+    <div>
+      <h1>Welcome to TwitAnalysis</h1>
+      <nav>
+        <ul>{viewLinks()}</ul>
+      </nav>
+      {viewContent(routing, props)}
+    </div>
+  );
 }

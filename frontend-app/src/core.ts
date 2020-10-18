@@ -80,7 +80,7 @@ export const reduce = (init: Model) => (
 };
 
 export enum Page {
-  Home = '/home',
+  Home = '/',
   FetchMe = '/fetch-me',
   SendTweet = '/send-tweet',
   Unknown = 'unknown',

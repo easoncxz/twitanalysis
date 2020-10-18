@@ -1,6 +1,7 @@
+import type { Dispatch } from 'redux';
+
 import * as core from './core';
 import { User, Status, t } from './twitter';
-import { Dispatch } from './utils';
 
 export type Effects = {
   noop(): core.Msg;
