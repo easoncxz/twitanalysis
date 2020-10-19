@@ -72,6 +72,15 @@ function viewSendTweet({ model, dispatch, effects }: Props): ReactElement {
   );
 }
 
+function viewUnknown(): ReactElement {
+  return (
+    <div>
+      <p>Unknown route. You seem lose.</p>
+      <a href={'#' + Page.Home}>Go home</a>
+    </div>
+  );
+}
+
 function viewContent({ location }: Routing.Model, props: Props): ReactElement {
   const page = parseLocation(location);
   switch (page) {
@@ -81,8 +90,8 @@ function viewContent({ location }: Routing.Model, props: Props): ReactElement {
       return viewFetchMe(props);
     case Page.SendTweet:
       return viewSendTweet(props);
-    case Page.Unknown:
-      return <p>Unknown route.</p>;
+    case undefined:
+      return viewUnknown();
     default:
       typecheckNever(page);
       throw new TypeError(`page: never = ${page}`);

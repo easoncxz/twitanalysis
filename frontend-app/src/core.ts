@@ -1,7 +1,7 @@
 import type * as history from 'history';
 
 import { User, Status } from './twitter';
-import { typecheckNever } from './utils';
+import { typecheckNever, stringEnumValues } from './utils';
 
 export type Model = {
   user?: User;
@@ -83,18 +83,15 @@ export enum Page {
   Home = '/',
   FetchMe = '/fetch-me',
   SendTweet = '/send-tweet',
-  Unknown = 'unknown',
 }
 
-export function parseLocation(location: history.Location<unknown>): Page {
-  switch (location.pathname) {
-    case '/':
-      return Page.Home;
-    case '/fetch-me':
-      return Page.FetchMe;
-    case '/send-tweet':
-      return Page.SendTweet;
-    default:
-      return Page.Unknown;
+export function parseLocation(
+  location: history.Location<unknown>,
+): Page | undefined {
+  for (const page of stringEnumValues(Page)) {
+    if (location.pathname === page) {
+      return page;
+    }
   }
+  return undefined;
 }
