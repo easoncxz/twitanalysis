@@ -75,8 +75,9 @@ function viewSendTweet({ model, dispatch, effects }: Props): ReactElement {
 function viewUnknown(): ReactElement {
   return (
     <div>
-      <p>Unknown route. You seem lose.</p>
-      <a href={'#' + Page.Home}>Go home</a>
+      <p>
+        Unknown route. You seem lost. <a href={'#' + Page.Home}>Go home</a>
+      </p>
     </div>
   );
 }
