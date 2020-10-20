@@ -180,7 +180,7 @@ task :install_frontend_tools do
   ## the `actions/setup-node` Action.
   if `which nodenv`.chomp.empty?
     puts "Sorry, you'll need to install nodenv manually."
-    Process.exit 1
+    #Process.exit 1
   end
   #if `which nodenv`.chomp.empty?
   #  puts "Installing Nodenv using nodenv-installer... (will it work?)"
