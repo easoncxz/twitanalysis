@@ -4,6 +4,7 @@ import type * as Redux from 'redux';
 import { Model, Msg, Page, parseLocation } from './core';
 import type { Effects } from './effects';
 import * as Routing from './routing';
+import * as F from './idb-fiddle';
 import { pretty, typecheckNever } from './utils';
 
 type Props = {
@@ -72,6 +73,32 @@ function viewSendTweet({ model, dispatch, effects }: Props): ReactElement {
   );
 }
 
+function viewIndexDBFiddle(_props: Props): ReactElement {
+  return (
+    <div>
+      <p>Click the button to run the logic.</p>
+      <button
+        onClick={async () => {
+          const db = await F.openMyDB();
+          await F.insertSomeData(db, F.things);
+          return db.close();
+        }}
+      >
+        Insert some data
+      </button>
+      <button
+        onClick={async () => {
+          const db = await F.openMyDB();
+          await F.clearTable(db);
+          return db.close();
+        }}
+      >
+        Clear the table
+      </button>
+    </div>
+  );
+}
+
 function viewUnknown(): ReactElement {
   return (
     <div>
@@ -91,6 +118,8 @@ function viewContent({ location }: Routing.Model, props: Props): ReactElement {
       return viewFetchMe(props);
     case Page.SendTweet:
       return viewSendTweet(props);
+    case Page.IndexDBFiddle:
+      return viewIndexDBFiddle(props);
     case undefined:
       return viewUnknown();
     default:

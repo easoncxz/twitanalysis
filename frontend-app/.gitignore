@@ -11,6 +11,7 @@ node_modules
 
 # Rollup output
 static/**/*.js
+static/**/*.js.map
 
 # TypeScript tsc output
 ts-out/

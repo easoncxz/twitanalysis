@@ -8,6 +8,7 @@ import pluginNodeResolve from '@rollup/plugin-node-resolve';
 import pluginCommonjs from '@rollup/plugin-commonjs';
 import pluginNodejsGlobals from 'rollup-plugin-node-globals';
 import pluginBabel from '@rollup/plugin-babel';
+import pluginSourceMap from 'rollup-plugin-sourcemaps';
 
 function roll(input, output) {
   return {
@@ -16,11 +17,13 @@ function roll(input, output) {
       file: output,
       format: 'iife',
       name: `Rollup_${path.basename(input, 'js')}`,
+      sourcemap: true,
     },
     plugins: [
       pluginNodeResolve(),
       pluginCommonjs(),
       pluginNodejsGlobals(),
+      pluginSourceMap(),
     ],
   };
 }
