@@ -10,25 +10,25 @@ if [ -d ts-out ]; then
   rm -rfv ts-out
 fi
 
-yarn ts-node src/playground/nodejs/format-curl-command.ts
+yarn ts-node --project src/dom/tsconfig.json src/dom/playground/nodejs/format-curl-command.ts
 
-yarn ts-node <<EOF
-import { formatCurlCommand } from './src/playground/nodejs/format-curl-command';
+yarn ts-node --project src/dom/tsconfig.json <<EOF
+import { formatCurlCommand } from './src/dom/playground/nodejs/format-curl-command';
 console.log(formatCurlCommand('http://google.com', {body: ''}));
 EOF
 
 # Now compile:
 yarn build
 
-node ts-out/playground/nodejs/format-curl-command.js
+node ts-out/dom/playground/nodejs/format-curl-command.js
 
 node <<EOF
-const oc = require('./ts-out/playground/nodejs/format-curl-command');
+const oc = require('./ts-out/dom/playground/nodejs/format-curl-command');
 console.log(oc.formatCurlCommand('http://google.com', {body: ''}));
 EOF
 
 # Extra, actually unreasonable test:
 #   - run the bundle for the browser, in nodejs
-node static/playground/initial-js-playground.js
+node static/dom/playground/initial-js-playground.js
 
 echo "All ok"
