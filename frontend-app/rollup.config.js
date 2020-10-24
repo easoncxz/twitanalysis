@@ -56,13 +56,9 @@ const reactPlaygroundBundle = {
   ],
 };
 
-function synonymousTsOut(input) {
-  return [`ts-out/${input}`, `static/${input}`];
-}
-
 export default [
   reactPlaygroundBundle,
-  roll(...synonymousTsOut('dom/main.js')),
-  roll(...synonymousTsOut('dom/playground/initial-js-playground.js')),
-  roll(...synonymousTsOut('service-worker/service-worker.js')),
+  roll('ts-out/dom/main.js', 'static/main.js'),
+  roll('ts-out/service-worker/service-worker.js', 'static/service-worker.js'),
+  roll('ts-out/dom/playground/initial-js-playground.js', 'static/playground/initial-js-playground.js'),
 ];
