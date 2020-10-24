@@ -16,7 +16,7 @@ function roll(input, output) {
     output: {
       file: output,
       format: 'iife',
-      name: `Rollup_${path.basename(input, 'js')}`,
+      name: `Rollup_${path.basename(input, '.js').replace(/-/g, '_')}`,
       sourcemap: true,
     },
     plugins: [
@@ -29,7 +29,7 @@ function roll(input, output) {
 }
 
 const reactPlaygroundBundle = {
-  input: 'src/playground/react-playground.js',
+  input: 'src/dom/playground/react-playground.js',
   external: [
     'react',
     'react-dom',
@@ -62,6 +62,7 @@ function synonymousTsOut(input) {
 
 export default [
   reactPlaygroundBundle,
-  roll(...synonymousTsOut('main.js')),
-  roll(...synonymousTsOut('playground/initial-js-playground.js')),
+  roll(...synonymousTsOut('dom/main.js')),
+  roll(...synonymousTsOut('dom/playground/initial-js-playground.js')),
+  roll(...synonymousTsOut('service-worker/service-worker.js')),
 ];

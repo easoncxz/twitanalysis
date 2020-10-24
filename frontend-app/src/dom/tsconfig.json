@@ -1,0 +1,9 @@
+{
+    "extends": "../base-tsconfig.json",
+    "compilerOptions": {
+        "lib": ["es2015", "dom"]
+    },
+    "references": [
+        { "path": "../service-worker" }
+    ]
+}

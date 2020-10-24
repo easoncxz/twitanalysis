@@ -19,9 +19,9 @@ export function headersToPairs(h: HeadersInit): [string, string][] {
   const result = [];
   if (h) {
     if (isProbablyHeaders(h)) {
-      for (const [k, v] of h.entries()) {
+      h.forEach((v, k) => {
         result.push([k, v] as [string, string]);
-      }
+      });
     } else if (h instanceof Array) {
       for (const [k, v] of h) {
         result.push([k, v] as [string, string]);
@@ -35,23 +35,16 @@ export function headersToPairs(h: HeadersInit): [string, string][] {
   return result;
 }
 
-
 export function formatCurlCommand(req: RequestInfo, init: RequestInit): string {
   const headerKvs: [string, string][] = headersToPairs(init.headers ?? []);
-  return [
-    'curl -i',
-  ]
-    .concat(headerKvs.map(([k, v]) =>
-      '-H ' + util.inspect( `${k}: ${v}`))
-    ).concat([`-X ${init?.method ?? 'GET'}`])
+  return ['curl -i']
+    .concat(headerKvs.map(([k, v]) => '-H ' + util.inspect(`${k}: ${v}`)))
+    .concat([`-X ${init?.method ?? 'GET'}`])
     .concat([`-d ${util.inspect(init?.body?.toString())}`])
     .concat([util.inspect(req.toString())])
     .join(' \\\n    ');
 }
 
 if (isMain()) {
-  console.log(formatCurlCommand(
-    'http://google.com',
-    { body: '' }
-  ));
+  console.log(formatCurlCommand('http://google.com', { body: '' }));
 }
