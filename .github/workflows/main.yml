@@ -54,6 +54,10 @@ jobs:
             backend-app/.stack-work/
           key: ${{ runner.os }}-${{ hashFiles('backend-app/package.yaml', 'backend-app/stack.yaml') }}
 
-      - name: 'Run Rake: default'
-        run: './activate.sh bundle exec rake'
-        shell: bash
+      # Like a proper publish, but without a Git tag
+      - name: 'Run Rake: publish (untagged)'
+        run: "./activate.sh bundle exec rake publish"
+        env:
+          GITHUB_OAUTH_TOKEN: "${{ github.token }}"
+
+
