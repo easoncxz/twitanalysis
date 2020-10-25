@@ -14,8 +14,10 @@ task :publish, [:tag] => [:package] do |t, args|
   # Define variables:
   repo = 'easoncxz/twitanalysis'
   git_tag = args[:tag] || begin
-    puts "Which version to publish? Pass a Git tag: rake publish GIT_TAG"
-    Process.exit 1
+    unless `git status --porcelain`.chomp.empty?
+      puts "Warning: publishing on an unclean commit"
+    end
+    `git rev-parse HEAD`.chomp[...7]
   end
   tarball = `realpath built-packages/twitanalysis.bdist.tar.gz`.chomp
   puts "Working with repo: #{repo}"
