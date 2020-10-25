@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# This script is intended to be run from the home directory on the Vultr box.
-# Commiting into this repo just as a way to keep track.
-
 set -e
 set -x
 
@@ -25,12 +22,12 @@ rm -rf current/
 mkdir current/
 tar -xzf versions/"$tarball_basename" -C current/
 
+killall twitanalysis-exe || true
 pushd current
-pkill twitanalysis || true
-( ./bin/twitanalysis-exe >> twitanalysis.log & echo $! > twitanalysis.pid )
-echo "$tarball_basename" > twitanalysis.version
+./bin/twitanalysis-exe >> ../twitanalysis.log & echo $! > ../twitanalysis.pid
 popd
 
+echo "$tarball_basename" > twitanalysis.version
 popd
 
 echo "$tarball_basename"
