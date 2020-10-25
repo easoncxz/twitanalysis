@@ -55,7 +55,7 @@ jobs:
           path: |
             ~/.stack/
             backend-app/.stack-work/
-          key: ${{ runner.os }}-${{ hashFiles('backend-app/app/**/*.hs', 'backend-app/src/**/*.hs', 'backend-app/test/**/*.hs') }}
+          key: ${{ runner.os }}-${{ hashFiles('backend-app/package.yaml', 'backend-app/stack.yaml') }}
 
       # Docs:
       #
