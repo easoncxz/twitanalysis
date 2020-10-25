@@ -56,6 +56,18 @@ These environment variables are needed by the backend-app server:
 
 Used in `src/TwitAnalysis/AppEnv.hs`. This is where the server will listen.
 
+### TWITANALYSIS_SSL_PORT
+
+Defaults to `5050`, but should be set to `443` in production.
+
+### TWITANALYSIS_HOSTNAME
+
+Defaults to `localhost`, but should be the real domain name in production, like
+`twitanalysis.easoncxz.com`.
+
+This does not include the protocol (`http[s]://`) nor the port
+(`:80`/`:443`/`:5000`).
+
 ### TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
 
 Used in `src/TwitAnalysis/OAuth/AuthFlow.hs`. Register for this on Twitter.

@@ -52,16 +52,25 @@ data Env =
 newEnv :: IO Env
 newEnv = do
   let defaultPort = 5000
-      sslPort = 5050
+      defaultSslPort = 5050
+      defaultHostname = "localhost"
   envPort <-
     do maybeStr <- Sys.lookupEnv "PORT"
        return . Maybe.fromMaybe defaultPort $ do
          str <- maybeStr
          num <- Read.readMaybe str
          return num
+  sslPort <-
+    do maybeStr <- Sys.lookupEnv "TWITANALYSIS_SSL_PORT"
+       return . Maybe.fromMaybe defaultSslPort $ do
+         str <- maybeStr
+         num <- Read.readMaybe str
+         return num
   envHttpMan <- HttpClient.newManager Tls.tlsManagerSettings
-  let baseUrl = "http://localhost:" ++ show envPort
-      sslBaseUrl = "https://localhost:" ++ show sslPort
+  hostname <-
+    Maybe.fromMaybe defaultHostname <$> Sys.lookupEnv "TWITANALYSIS_HOSTNAME"
+  let baseUrl = "http://" ++ hostname ++ ":" ++ show envPort
+      sslBaseUrl = "https://" ++ hostname ++ ":" ++ show sslPort
   let envOAuthCallbackPath = "/oauth-callback"
       envHomePagePath = "/app.html" -- connect through to frontend via static
       envLoginPath = "/login"
