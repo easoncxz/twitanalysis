@@ -93,28 +93,10 @@ const render = () => {
   );
 };
 
-async function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
-      console.log(
-        'From main.js: ServiceWorker registration complete:',
-        reg,
-        reg.scope,
-      );
-    } catch (e) {
-      console.log('From main.js: ServiceWorker registration failed:', e);
-    }
-  } else {
-    console.log("Main.ts: ServiceWorker doesn't appear to be supported.");
-  }
-}
-
 const bootstrap = async () => {
   hist.listen(routing.listener(dispatches.routing));
   store.subscribe(render);
   render();
-  await registerServiceWorker();
 };
 
 if (typeof window === 'object') {

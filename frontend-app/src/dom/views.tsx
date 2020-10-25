@@ -147,6 +147,19 @@ export function view(routing: Routing.Model, props: Props): ReactElement {
       <nav>
         <ul>{viewLinks()}</ul>
       </nav>
+      <button
+        onClick={() => props.dispatch(props.effects.registerServiceWorker())}
+      >
+        register ServiceWorker
+      </button>
+      <button
+        onClick={() =>
+          props.dispatch(props.effects.unregisterAllServiceWorkers())
+        }
+      >
+        unregister all ServiceWorkers
+      </button>
+      <hr />
       {viewContent(routing, props)}
     </div>
   );
