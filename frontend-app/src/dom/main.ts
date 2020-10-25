@@ -96,7 +96,7 @@ const render = () => {
 async function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     try {
-      const reg = await navigator.serviceWorker.register('/service-worker.js');
+      const reg = await navigator.serviceWorker.register('/sw.js');
       console.log(
         'From main.js: ServiceWorker registration complete:',
         reg,

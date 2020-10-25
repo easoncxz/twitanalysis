@@ -59,6 +59,6 @@ const reactPlaygroundBundle = {
 export default [
   reactPlaygroundBundle,
   roll('ts-out/dom/main.js', 'static/main.js'),
-  roll('ts-out/service-worker/service-worker.js', 'static/service-worker.js'),
+  roll('ts-out/sw/sw.js', 'static/sw.js'),
   roll('ts-out/dom/playground/initial-js-playground.js', 'static/playground/initial-js-playground.js'),
 ];
