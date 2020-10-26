@@ -12,6 +12,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY_TO_VULTR }}
+          name: twitanalysis-github-action-runner
+          known_hosts: |
+            twitanalysis.easoncxz.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAYuwrY53sBSdWXvVUiFfwf0QSKhNVdSDZ96Hzl0acW1RMlS2dMdkdH1ajTon/qGCdw5A8/Onx+nJX+zAZ2lzw0=
+          config: |
+            Host twitanalysis.easoncxz.com
+                HostName twitanalysis.easoncxz.com
+                User eason
+                IdentityFile ~/.ssh/twitanalysis-github-action-runner
+                IdentitiesOnly yes
+                PasswordAuthentication no
+                ForwardAgent no
+
       # https://github.com/actions/setup-node/
       - name: Set NodeJS version
         uses: actions/setup-node@v2-beta
@@ -60,4 +76,5 @@ jobs:
         env:
           GITHUB_OAUTH_TOKEN: "${{ github.token }}"
 
-
+      - name: Deploy to Vultr
+        run: "./activate.sh bundle exec rake deploy"

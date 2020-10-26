@@ -63,6 +63,16 @@ task :publish, [:tag] => [:package] do |t, args|
   puts "Release URL: #{release.html_url}"
 end
 
+task upload: [:package] do
+  tarball = `realpath built-packages/twitanalysis.bdist.tar.gz`.chomp
+  die "rsync #{tarball} twitanalysis.easoncxz.com:~/twitanalysis-live/versions/"
+end
+
+task :deploy, [:version] => [:upload] do |t, args|
+  basename = args[:version] || `realpath built-packages/twitanalysis.bdist.tar.gz`.chomp
+  die "ssh twitanalysis.easoncxz.com 'bash -s https://example.com/#{basename}' < ./deploy-twitanalysis.sh"
+end
+
 task package: [:build, :test] do
   puts "Hello, Rake is running: package"
   # Define some variables:
