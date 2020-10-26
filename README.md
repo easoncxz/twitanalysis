@@ -1,6 +1,10 @@
 TwitAnalysis
 ============
 
+![Daily Workflow](https://github.com/easoncxz/twitanalysis/workflows/Daily%20Workflow/badge.svg?branch=master)
+
+Live instance deployed at: <https://twitanalysis.easoncxz.com/>
+
 An experiment-lab for building Twitter tools using the Twitter v1.1 REST API.
 
 - `backend-app/` is a Haskell Stack project, defining the backend server.
