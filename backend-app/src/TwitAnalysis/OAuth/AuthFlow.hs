@@ -13,6 +13,7 @@ module TwitAnalysis.OAuth.AuthFlow
   , newEnv
   , startOAuthFlow'
   , handleOAuthCallback'
+  , forfeitRequestToken
   , myOAuthServer
   , envClientCred
   ) where
@@ -108,6 +109,10 @@ rememberRequestToken :: RequestTokenCache -> Token Temporary -> IO ()
 rememberRequestToken cache tok =
   STM.atomically . STM.modifyTVar' cache $ Map.insert (tok ^. OAuthCred.key) tok
 
+forgetRequestToken :: RequestTokenCache -> OAuthCred.Key -> IO ()
+forgetRequestToken cache key =
+  STM.atomically . STM.modifyTVar' cache $ Map.delete key
+
 relativeUrl :: (IsString s, Monoid s) => s -> s
 relativeUrl = ("https://api.twitter.com/1.1/" <>)
 
@@ -157,6 +162,10 @@ startOAuthFlow' UnsafeEnv { envBaseUrl = selfServerBaseUrl
 data ExchangeAccessTokenResult
   = AccessTokenDenied BSL.ByteString
   | AccessTokenAcquired (Token Permanent)
+
+forfeitRequestToken :: Env -> OAuthCred.Key -> IO ()
+forfeitRequestToken UnsafeEnv {envRequestTokenCache = cache} requestTokenKey = do
+  forgetRequestToken cache requestTokenKey
 
 -- | Lower-level action
 handleOAuthCallback' ::

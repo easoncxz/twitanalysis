@@ -16,8 +16,12 @@ module TwitAnalysis.LoginFlow
 
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy.Char8 as BSL8
+import qualified Data.List as List
+import qualified Data.Maybe as Maybe
 import Data.String (IsString, fromString)
+import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import Lens.Micro ((^.))
 import qualified Network.HTTP.Client as HC
@@ -87,6 +91,17 @@ handleLogin UnsafeEnv {envSessionMan} authEnv recaptchaEnv homePagePath = do
 
 handleOAuthCallback :: Env -> Auth.Env -> String -> ActionM ()
 handleOAuthCallback UnsafeEnv {envSessionMan} authEnv homePagePath = do
+  allParams <- Scotty.params
+  let denied = List.lookup "denied" allParams
+  case denied of
+    Nothing -> return ()
+    Just requestTokenTl ->
+      case Scotty.parseParam requestTokenTl of
+        Left err -> renderError (Just "Error from Twitter's redirect")
+        Right rtkey -> do
+          liftIO $ Auth.forfeitRequestToken authEnv rtkey
+          renderError (Just "You denied us OAuth access.")
+          Scotty.finish
   reqTokenKey :: OAuthCred.Key <- Scotty.param "oauth_token"
   verifierBs :: OAuthThreeL.Verifier <- Scotty.param "oauth_verifier"
   result <- liftIO $ Auth.handleOAuthCallback' authEnv (reqTokenKey, verifierBs)
@@ -97,7 +112,7 @@ handleOAuthCallback UnsafeEnv {envSessionMan} authEnv homePagePath = do
           ("Failed to swap request token for access token. Request body printed below.")
         BSL8.putStrLn lbs
       Session.modifySession envSessionMan (const Nothing)
-      renderError
+      renderError Nothing
     Auth.AccessTokenAcquired token -> do
       liftIO
         (putStrLn
@@ -106,11 +121,12 @@ handleOAuthCallback UnsafeEnv {envSessionMan} authEnv homePagePath = do
       Session.modifySession envSessionMan (const (Just (UserSession token)))
       Scotty.redirect (fromString homePagePath)
   where
-    renderError = do
-      let msg :: IsString s => s
-          msg = "Failed to obtain access token."
-      Scotty.status HTS.status401 {HTS.statusMessage = msg}
-      Scotty.html msg
+    renderError :: Maybe String -> Scotty.ActionM ()
+    renderError maybeMsg = do
+      let defaultMsg = "Failed to obtain access token."
+          msg = Maybe.fromMaybe defaultMsg maybeMsg
+      Scotty.status HTS.status401 {HTS.statusMessage = BS8.pack msg}
+      Scotty.html . TL.fromStrict . T.pack $ msg
 
 viewHome :: String -> Env -> ActionM ()
 viewHome loginPath UnsafeEnv {envSessionMan} = do
