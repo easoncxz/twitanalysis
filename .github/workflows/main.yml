@@ -70,11 +70,6 @@ jobs:
             backend-app/.stack-work/
           key: ${{ runner.os }}-${{ hashFiles('backend-app/package.yaml', 'backend-app/stack.yaml') }}
 
-      # Like a proper publish, but without a Git tag
-      - name: 'Run Rake: publish (untagged)'
-        run: "./activate.sh bundle exec rake publish"
-        env:
-          GITHUB_OAUTH_TOKEN: "${{ github.token }}"
-
+      # All-in-one: build, test, package, upload, activate
       - name: Deploy to Vultr
         run: "./activate.sh bundle exec rake deploy"
