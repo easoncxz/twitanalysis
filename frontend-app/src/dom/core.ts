@@ -84,6 +84,7 @@ export enum Page {
   FetchMe = '/fetch-me',
   SendTweet = '/send-tweet',
   IndexDBFiddle = '/idb',
+  ServiceWorkerManagement = '/sw-mgmt',
 }
 
 export function parseLocation(

@@ -1,0 +1,32 @@
+#react-main-view {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+nav {
+  width: 100%;
+  overflow: scroll;
+  white-space: nowrap;
+}
+
+nav > .nav-item {
+  display: inline-block;
+  border: 1px solid #ddd;
+  padding: 1em;
+  text-decoration: none;
+  color: initial;
+  margin: 2px;
+}
+
+nav > .nav-item:hover {
+  border-color: #333;
+}
+
+nav > .nav-item:active {
+  margin: 0;
+  border-width: 3px;
+}
+
+nav > .nav-item:visited {
+  border-style: dashed;
+}

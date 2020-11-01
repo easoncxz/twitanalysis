@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, ReactFragment } from 'react';
 import type * as Redux from 'redux';
 
 import { Model, Msg, Page, parseLocation } from './core';
@@ -73,9 +73,9 @@ function viewSendTweet({ model, dispatch, effects }: Props): ReactElement {
   );
 }
 
-function viewIndexDBFiddle(_props: Props): ReactElement {
+function viewIndexDBFiddle(_props: Props): ReactFragment {
   return (
-    <div>
+    <>
       <p>Click the button to run the logic.</p>
       <button
         onClick={async () => {
@@ -95,58 +95,13 @@ function viewIndexDBFiddle(_props: Props): ReactElement {
       >
         Clear the table
       </button>
-    </div>
+    </>
   );
 }
 
-function viewUnknown(): ReactElement {
+function viewServiceWorkerManagement(props: Props): ReactFragment {
   return (
-    <div>
-      <p>
-        Unknown route. You seem lost. <a href={'#' + Page.Home}>Go home</a>
-      </p>
-    </div>
-  );
-}
-
-function viewContent({ location }: Routing.Model, props: Props): ReactElement {
-  const page = parseLocation(location);
-  switch (page) {
-    case Page.Home:
-      return <p>Please click through the nav menu!</p>;
-    case Page.FetchMe:
-      return viewFetchMe(props);
-    case Page.SendTweet:
-      return viewSendTweet(props);
-    case Page.IndexDBFiddle:
-      return viewIndexDBFiddle(props);
-    case undefined:
-      return viewUnknown();
-    default:
-      typecheckNever(page);
-      throw new TypeError(`page: never = ${page}`);
-  }
-}
-
-function viewLinks(): ReactElement[] {
-  const out = [];
-  for (const [k, v] of Object.entries(Page)) {
-    out.push(
-      <li key={`nav-${k}`}>
-        <a href={'#' + v}>{k}</a>
-      </li>,
-    );
-  }
-  return out;
-}
-
-export function view(routing: Routing.Model, props: Props): ReactElement {
-  return (
-    <div>
-      <h1>Welcome to TwitAnalysis</h1>
-      <nav>
-        <ul>{viewLinks()}</ul>
-      </nav>
+    <>
       <button
         onClick={() => props.dispatch(props.effects.registerServiceWorker())}
       >
@@ -159,6 +114,56 @@ export function view(routing: Routing.Model, props: Props): ReactElement {
       >
         unregister all ServiceWorkers
       </button>
+    </>
+  );
+}
+
+function viewUnknown(): ReactElement {
+  return (
+    <p>
+      Unknown route. You seem lost. <a href={'#' + Page.Home}>Go home</a>
+    </p>
+  );
+}
+
+function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
+  const page = parseLocation(location);
+  switch (page) {
+    case Page.Home:
+      return <p>Please click through the nav menu!</p>;
+    case Page.FetchMe:
+      return viewFetchMe(props);
+    case Page.SendTweet:
+      return viewSendTweet(props);
+    case Page.IndexDBFiddle:
+      return viewIndexDBFiddle(props);
+    case Page.ServiceWorkerManagement:
+      return viewServiceWorkerManagement(props);
+    case undefined:
+      return viewUnknown();
+    default:
+      typecheckNever(page);
+      throw new TypeError(`page: never = ${page}`);
+  }
+}
+
+function viewOneLink([k, v]: [string, string]): ReactElement {
+  return (
+    <a className="nav-item" href={'#' + v} key={`nav-${k}`}>
+      {k}
+    </a>
+  );
+}
+
+function viewLinks(): ReactElement[] {
+  return Object.entries(Page).map(viewOneLink);
+}
+
+export function view(routing: Routing.Model, props: Props): ReactElement {
+  return (
+    <div id="react-main-view">
+      <h1>Welcome to TwitAnalysis</h1>
+      <nav>{viewLinks()}</nav>
       <hr />
       {viewContent(routing, props)}
     </div>
