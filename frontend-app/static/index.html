@@ -2,22 +2,47 @@
 <html>
   <head>
     <title>TwitAnalysis</title>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </head>
   <body>
     <h1>Welcome to TwitAnalysis</h1>
 
     <!-- endpoint matches with route-definitions in TwitAnalysis.ScottyApp -->
     <form action="/login" method="POST">
-      <div class="g-recaptcha" data-sitekey="6LfsrtUZAAAAAAFSApHL-lwaS_MDZE1wMjhTETnO"></div>
+      <div
+        class="g-recaptcha"
+        data-sitekey="6LfsrtUZAAAAAAFSApHL-lwaS_MDZE1wMjhTETnO"
+        data-callback="onRecaptchaVerified"
+        data-expired-callback="onRecaptchaExpired"
+        >
+      </div>
       <br/>
-      <input type="submit" value="Sign in with Twitter">
+      <input
+        id="submit-recaptcha-form"
+        type="submit"
+        value="Sign in with Twitter"
+        />
     </form>
 
     <footer>
       <p>Source code on Github: <a href="https://github.com/easoncxz/twitanalysis">https://github.com/easoncxz/twitanalysis</a></p>
       <p>Contact: <a href="https://twitter.com/easoncxz"><code>@easoncxz</code></a> on Twitter</p>
     </footer>
+
+    <script defer>
+      const submitButton = document.getElementById('submit-recaptcha-form');
+      submitButton.disabled = true;
+
+      function onRecaptchaVerified(token) {
+        console.log("Received ReCaptcha token:", token);
+        submitButton.disabled = false;
+      }
+
+      function onRecaptchaExpired() {
+        console.log("ReCaptcha expired");
+        submitButton.disabled = true;
+      }
+    </script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
   </body>
 </html>
