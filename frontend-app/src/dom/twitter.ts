@@ -14,5 +14,5 @@ export type Status = {
  * Shorthand to connect to the OAuth pass-thru endpoint on the Haskell side
  */
 export function t(rel: string): string {
-  return '/to-twitter/' + rel;
+  return '/to-twitter/' + rel + '.json';
 }

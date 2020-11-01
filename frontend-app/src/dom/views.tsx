@@ -4,6 +4,7 @@ import type * as Redux from 'redux';
 import { Model, Msg, Page, parseLocation } from './core';
 import type { Effects } from './effects';
 import * as Routing from './routing';
+import { Status } from './twitter';
 import * as F from './idb-fiddle';
 import { pretty, typecheckNever } from './utils';
 
@@ -34,6 +35,35 @@ function viewFetchMe({ model, dispatch, effects }: Props): ReactElement {
         </div>
       )}
     </div>
+  );
+}
+
+function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
+  const go = () =>
+    dispatch(
+      effects.fetchFaves(model.user?.screen_name ?? model.faveNick, 200),
+    );
+  const faveList = model.faves.map((f: Status, i: number) => (
+    <li key={'fave-' + String(i)}>{f.text}</li>
+  ));
+  return (
+    <>
+      <p>Fetch your favourited tweets</p>
+      <input
+        type="text"
+        value={model.user?.screen_name ?? model.faveNick}
+        onChange={(e) =>
+          dispatch({ type: 'update_fave_nick', nick: e.target.value })
+        }
+      />
+      <button
+        onClick={go}
+        disabled={model.fetchingFaves || model.faves.length > 0}
+      >
+        Fetch them
+      </button>
+      {faveList.length > 0 ? <ul>{faveList}</ul> : <p>No faves</p>}
+    </>
   );
 }
 
@@ -133,6 +163,8 @@ function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
       return <p>Please click through the nav menu!</p>;
     case Page.FetchMe:
       return viewFetchMe(props);
+    case Page.FetchFaves:
+      return viewFetchFaves(props);
     case Page.SendTweet:
       return viewSendTweet(props);
     case Page.IndexDBFiddle:

@@ -6,6 +6,7 @@ import { User, Status, t } from './twitter';
 export type Effects = {
   noop(): core.Msg;
   fetchMe(): core.Msg;
+  fetchFaves(nik: string, count: number): core.Msg;
   sendTweet(t: string): core.Msg;
   registerServiceWorker(): core.Msg;
   unregisterAllServiceWorkers(): core.Msg;
@@ -18,7 +19,7 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => ({
     };
   },
   fetchMe() {
-    fetch(t('account/verify_credentials.json'))
+    fetch(t('account/verify_credentials'))
       .then((r) => r.json())
       .then((user: User) => {
         dispatch({ type: 'receive_fetch_me', user });
@@ -27,10 +28,23 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => ({
       type: 'start_fetch_me',
     };
   },
+  fetchFaves(nik: string, count = 200) {
+    const searchParams = new URLSearchParams();
+    searchParams.append('screen_name', nik);
+    searchParams.append('count', count.toString());
+    fetch(t('favorites/list') + '?' + searchParams.toString())
+      .then((r) => r.json())
+      .then((statuses: Status[]) => {
+        dispatch({ type: 'receive_fetch_faves', statuses });
+      });
+    return {
+      type: 'start_fetch_faves',
+    };
+  },
   sendTweet(text: string) {
     const body = new URLSearchParams();
     body.set('status', text);
-    fetch(t('statuses/update.json'), {
+    fetch(t('statuses/update'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
