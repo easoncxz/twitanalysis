@@ -56,10 +56,7 @@ function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
           dispatch({ type: 'update_fave_nick', nick: e.target.value })
         }
       />
-      <button
-        onClick={go}
-        disabled={model.fetchingFaves || model.faves.length > 0}
-      >
+      <button onClick={go} disabled={model.fetchingFaves}>
         Fetch them
       </button>
       {faveList.length > 0 ? <ul>{faveList}</ul> : <p>No faves</p>}
@@ -196,6 +193,20 @@ export function view(routing: Routing.Model, props: Props): ReactElement {
     <div id="react-main-view">
       <h1>Welcome to TwitAnalysis</h1>
       <nav>{viewLinks()}</nav>
+      <div id="toast-box">
+        {props.model.errors.map((e, i) => (
+          <div
+            key={`error-toast-${i}`}
+            className="error-toast"
+            onClick={() => props.dispatch({ type: 'clear_error', error: e })}
+          >
+            <code>
+              {e.name}: {e.message}
+            </code>
+            <pre>{e.stack}</pre>
+          </div>
+        ))}
+      </div>
       <hr />
       {viewContent(routing, props)}
     </div>
