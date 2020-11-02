@@ -31,12 +31,13 @@ nav > .nav-item:visited {
   border-style: dashed;
 }
 
-#toast-box {
+#toast-box > div {
   max-height: 3em;
   overflow: scroll;
+  padding: 1em;
+  margin: 10px 0;
 }
 
 .error-toast {
-  padding: 1em;
   background-color: #ff8686;
 }
