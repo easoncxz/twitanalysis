@@ -1,6 +1,7 @@
 import type { Dispatch } from 'redux';
 
 import * as core from './core';
+import * as tdb from './twit-db';
 import { User, Status, t, parseUser, parseStatus, parseList } from './twitter';
 
 export type Effects = {
@@ -8,6 +9,15 @@ export type Effects = {
   fetchMe(): core.Msg;
   fetchFaves(nik: string, count: number): core.Msg;
   sendTweet(t: string): core.Msg;
+  createTwitDb(): core.Msg;
+  deleteTwitDb(): core.Msg;
+  saveUser(u: User): core.Msg;
+  readUser(id_str: string): core.Msg;
+  putTweet(s: Status): core.Msg;
+  putTweets(ss: Status[]): core.Msg;
+  readTweet(id_str: string): core.Msg;
+  readAllTweets(): core.Msg;
+
   registerServiceWorker(): core.Msg;
   unregisterAllServiceWorkers(): core.Msg;
 };
@@ -33,6 +43,7 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
         type: 'noop',
       };
     },
+
     fetchMe() {
       fetchJson(t('account/verify_credentials'))
         .then(parseUser)
@@ -46,6 +57,7 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
         type: 'start_fetch_me',
       };
     },
+
     fetchFaves(nik: string, count = 200) {
       const searchParams = new URLSearchParams();
       searchParams.append('screen_name', nik);
@@ -62,6 +74,7 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
         type: 'start_fetch_faves',
       };
     },
+
     sendTweet(text: string) {
       const body = new URLSearchParams();
       body.set('status', text);
@@ -81,6 +94,94 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
         );
       return { type: 'start_send_tweet' };
     },
+
+    createTwitDb() {
+      tdb.openMyDB().then(() => dispatch({ type: 'idb_created_db' }));
+      return { type: 'idb_creating_db' };
+    },
+
+    deleteTwitDb() {
+      tdb.deleteMyDb();
+      return core.noop();
+    },
+
+    saveUser(user) {
+      tdb
+        .withDB(async (db) => {
+          const tx = db.transaction('users', 'readwrite');
+          const users = tx.objectStore('users');
+          await users.add(user);
+          return tx.done;
+        })
+        .then(() => {
+          dispatch({ type: 'idb_saved_user', user });
+        });
+      return { type: 'idb_saving_user', user };
+    },
+
+    readUser(id_str) {
+      tdb
+        .withDB(async (db) => {
+          const tx = db.transaction('users');
+          const users = tx.store;
+          return users.get(id_str);
+        })
+        .then((user) => {
+          dispatch({ type: 'idb_read_user', id_str, user });
+        });
+      return { type: 'idb_reading_user', id_str };
+    },
+
+    putTweet(s: Status) {
+      tdb
+        .withDB(async (db) => {
+          const tx = db.transaction('tweets', 'readwrite');
+          const tweets = tx.objectStore('tweets');
+          return tweets.put(s);
+        })
+        .then(() => dispatch({ type: 'idb_saved_tweet', status: s }));
+      return { type: 'idb_saving_tweet', status: s };
+    },
+
+    putTweets(ss: Status[]) {
+      tdb
+        .withDB(async (db) => {
+          const tx = db.transaction('tweets', 'readwrite');
+          const tweets = () => tx.objectStore('tweets');
+          const result = await Promise.all(ss.map((s) => tweets().put(s)));
+          await tx.done;
+          return result;
+        })
+        .then(() => dispatch({ type: 'idb_saved_tweets', statuses: ss }));
+      return { type: 'idb_saving_tweets', statuses: ss };
+    },
+
+    readTweet(id_str: string) {
+      tdb
+        .withDB(async (db) => {
+          const tx = db.transaction('tweets');
+          const tweets = tx.objectStore('tweets');
+          return tweets.get(id_str);
+        })
+        .then((status) => dispatch({ type: 'idb_read_tweet', id_str, status }));
+      return { type: 'idb_reading_tweet', id_str };
+    },
+
+    readAllTweets() {
+      tdb
+        .withDB(async (db) => {
+          const tx = db.transaction('tweets');
+          const tweets = tx.objectStore('tweets');
+          const res = await tweets.getAll();
+          await tx.done;
+          return res;
+        })
+        .then((statuses) =>
+          dispatch({ type: 'idb_read_all_tweets', statuses }),
+        );
+      return { type: 'idb_reading_all_tweets' };
+    },
+
     registerServiceWorker() {
       (async () => {
         if ('serviceWorker' in navigator) {
@@ -101,6 +202,7 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
       })();
       return this.noop();
     },
+
     unregisterAllServiceWorkers() {
       (async () => {
         if ('serviceWorker' in navigator) {

@@ -43,22 +43,40 @@ function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
     dispatch(
       effects.fetchFaves(model.user?.screen_name ?? model.faveNick, 200),
     );
-  const faveList = model.faves.map((f: Status, i: number) => (
-    <li key={'fave-' + String(i)}>{f.text}</li>
-  ));
+  const faveList = model.faves
+    .filter((f) => new RegExp(model.searchFaves ?? '.').exec(f.text))
+    .map((f: Status, i: number) => <li key={'fave-' + String(i)}>{f.text}</li>);
   return (
     <>
-      <p>Fetch your favourited tweets</p>
-      <input
-        type="text"
-        value={model.user?.screen_name ?? model.faveNick}
-        onChange={(e) =>
-          dispatch({ type: 'update_fave_nick', nick: e.target.value })
-        }
-      />
-      <button onClick={go} disabled={model.fetchingFaves}>
-        Fetch them
-      </button>
+      <div>
+        <span>Fetch your favourited tweets</span>
+        <input
+          type="text"
+          value={model.user?.screen_name ?? model.faveNick}
+          onChange={(e) =>
+            dispatch({ type: 'update_fave_nick', nick: e.target.value })
+          }
+        />
+        <button onClick={go} disabled={model.fetchingFaves}>
+          Fetch from Twitter
+        </button>
+        <button onClick={() => dispatch(effects.readAllTweets())}>
+          Load from IndexedDB
+        </button>
+        <button onClick={() => dispatch(effects.putTweets(model.faves))}>
+          Save to IndexedDB
+        </button>
+      </div>
+      <div>
+        <span>Search:</span>
+        <input
+          type="text"
+          value={model.searchFaves ?? ''}
+          onChange={(e) =>
+            dispatch({ type: 'update_search_faves', search: e.target.value })
+          }
+        />
+      </div>
       {faveList.length > 0 ? <ul>{faveList}</ul> : <p>No faves</p>}
     </>
   );

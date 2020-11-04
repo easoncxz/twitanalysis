@@ -1,4 +1,4 @@
-import { openDB } from 'idb';
+import { openDB, deleteDB } from 'idb';
 import type { IDBPDatabase, IDBPTransaction, DBSchema } from 'idb';
 
 import { User, Status } from './twitter';
@@ -14,8 +14,11 @@ interface TwitDb extends DBSchema {
   };
 }
 
+const dbName = 'twitanalysis-idb';
+const dbVersion = 1;
+
 export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
-  const db: IDBPDatabase<TwitDb> = await openDB<TwitDb>('twitanalysis-idb', 1, {
+  const db: IDBPDatabase<TwitDb> = await openDB<TwitDb>(dbName, dbVersion, {
     blocked() {
       console.log('openDB Blocked');
     },
@@ -42,6 +45,14 @@ export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
     },
   });
   return db;
+}
+
+export async function deleteMyDb(): Promise<void> {
+  await deleteDB(dbName, {
+    blocked() {
+      console.log(`deleteDB blocked`);
+    },
+  });
 }
 
 export async function withDB<T>(
