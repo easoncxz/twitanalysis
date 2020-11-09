@@ -172,7 +172,12 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
         .withDB(async (db) => {
           const tx = db.transaction('tweets');
           const tweets = tx.objectStore('tweets');
-          const res = await tweets.getAll();
+          const res = [];
+          let cursor = await tweets.openCursor(undefined, 'prev');
+          while (cursor) {
+            res.push(cursor.value);
+            cursor = await cursor.continue();
+          }
           await tx.done;
           return res;
         })
