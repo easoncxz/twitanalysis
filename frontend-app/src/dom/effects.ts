@@ -7,7 +7,10 @@ import { User, Status, t, parseUser, parseStatus, parseList } from './twitter';
 export type Effects = {
   noop(): core.Msg;
   fetchMe(): core.Msg;
-  fetchFaves(nik: string, count: number): core.Msg;
+  fetchFaves(
+    nik: string,
+    _: { count?: number; max_id?: string; since_id?: string },
+  ): core.Msg;
   sendTweet(t: string): core.Msg;
   createTwitDb(): core.Msg;
   deleteTwitDb(): core.Msg;
@@ -58,10 +61,16 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
       };
     },
 
-    fetchFaves(nik: string, count = 200) {
+    fetchFaves(nik, { count = 200, since_id, max_id }) {
       const searchParams = new URLSearchParams();
       searchParams.append('screen_name', nik);
       searchParams.append('count', count.toString());
+      if (since_id !== undefined) {
+        searchParams.append('since_id', since_id);
+      }
+      if (max_id !== undefined) {
+        searchParams.append('max_id', max_id);
+      }
       fetchJson(t('favorites/list') + '?' + searchParams.toString())
         .then(parseList(parseStatus))
         .then(

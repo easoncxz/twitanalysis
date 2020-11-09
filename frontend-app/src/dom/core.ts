@@ -140,7 +140,7 @@ export const reduce = (init: Model) => (
       return {
         ...model,
         fetchingFaves: false,
-        faves: msg.statuses,
+        faves: model.faves.concat(msg.statuses.reverse()),
       };
     }
     case 'error_fetch_faves': {

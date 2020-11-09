@@ -41,7 +41,12 @@ function viewFetchMe({ model, dispatch, effects }: Props): ReactElement {
 function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
   const go = () =>
     dispatch(
-      effects.fetchFaves(model.user?.screen_name ?? model.faveNick, 200),
+      effects.fetchFaves(model.user?.screen_name ?? model.faveNick, {
+        count: 200,
+        max_id: model.faves.length
+          ? model.faves[model.faves.length - 1].id_str
+          : undefined,
+      }),
     );
   const faveList = model.faves
     .filter((f) => new RegExp(model.searchFaves ?? '.').exec(f.text))
