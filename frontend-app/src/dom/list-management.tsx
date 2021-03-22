@@ -10,14 +10,25 @@ type Props = {
   effects: Effects;
 };
 
-export const ListManagement: FC<{ props: Props }> = () => {
+type Com<T = {}> = FC<{ props: Props } & T>;
+
+export const ListManagement: Com = () => {
+  const ListPicker = () => (
+    <div className="list-picker">
+      <select>
+        <option value="foo">foo</option>
+        <option value="bar">bar</option>
+      </select>
+      <button type="button">refresh</button>
+    </div>
+  );
+
   return (
     <div className="page list-management">
       <p>Manage your Twitter lists</p>
       <div className="sidescroll">
         <div className="source-list">
-          <code>ListPicker</code>
-          <p>(List name)</p>
+          <ListPicker />
           <ul>
             <li>(account in this list)</li>
           </ul>

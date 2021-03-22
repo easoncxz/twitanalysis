@@ -49,8 +49,19 @@ nav > .nav-item:visited {
 }
 
 .page.list-management .sidescroll > div {
-  border: 1px dashed #ddd;
   padding: 1em;
+}
+
+.page.list-management .sidescroll .list-picker {
+  display: flex;
+}
+
+.page.list-management .sidescroll .list-picker > select {
+  flex-grow: 1;
+}
+
+.page.list-management .sidescroll .list-picker > button {
+  flex-grow: 0;
 }
 
 .page.list-management .sidescroll .source-list {
@@ -60,6 +71,7 @@ nav > .nav-item:visited {
 
 .page.list-management .sidescroll .focused-account {
   flex-grow: 6;
+  background-color: #eee;
 }
 
 .page.list-management .sidescroll .destination-list {
