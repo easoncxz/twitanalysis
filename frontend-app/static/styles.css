@@ -41,3 +41,27 @@ nav > .nav-item:visited {
 .error-toast {
   background-color: #ff8686;
 }
+
+.page.list-management .sidescroll {
+  display: flex;
+  flex-direction: row;
+  overflow: scroll;
+}
+
+.page.list-management .sidescroll > div {
+  border: 1px dashed #ddd;
+  padding: 1em;
+}
+
+.page.list-management .sidescroll .source-list {
+  min-width: 50px;
+  flex-grow: 2;
+}
+
+.page.list-management .sidescroll .focused-account {
+  flex-grow: 6;
+}
+
+.page.list-management .sidescroll .destination-list {
+  flex-grow: 2;
+}

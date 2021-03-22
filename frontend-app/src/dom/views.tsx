@@ -7,6 +7,7 @@ import * as Routing from './routing';
 import { Status } from './twitter';
 import * as F from './idb-fiddle';
 import { pretty, typecheckNever } from './utils';
+import { ListManagement } from './list-management';
 
 type Props = {
   model: Model;
@@ -168,10 +169,6 @@ function viewServiceWorkerManagement(props: Props): ReactFragment {
   );
 }
 
-function viewListManagement(_: Props) {
-  return <p>Manage your Twitter lists</p>;
-}
-
 function viewUnknown(): ReactElement {
   return (
     <p>
@@ -196,7 +193,7 @@ function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
     case Page.ServiceWorkerManagement:
       return viewServiceWorkerManagement(props);
     case Page.ListManagement:
-      return viewListManagement(props);
+      return <ListManagement props={props} />;
     case undefined:
       return viewUnknown();
     default:
