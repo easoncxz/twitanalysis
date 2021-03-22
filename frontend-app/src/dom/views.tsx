@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactFragment } from 'react';
+import React, { ReactElement, ReactFragment, FC } from 'react';
 import type * as Redux from 'redux';
 
 import { Model, Msg, Page, parseLocation } from './core';
@@ -168,6 +168,10 @@ function viewServiceWorkerManagement(props: Props): ReactFragment {
   );
 }
 
+const ListManagement: FC<{ props: Props }> = () => {
+  return <p>Manage your Twitter lists</p>;
+};
+
 function viewUnknown(): ReactElement {
   return (
     <p>
@@ -191,6 +195,8 @@ function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
       return viewIndexDBFiddle(props);
     case Page.ServiceWorkerManagement:
       return viewServiceWorkerManagement(props);
+    case Page.ListManagement:
+      return <ListManagement props={props} />;
     case undefined:
       return viewUnknown();
     default:

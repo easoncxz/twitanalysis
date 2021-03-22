@@ -233,6 +233,7 @@ export enum Page {
   FetchFaves = '/fetch-faves',
   IndexDBFiddle = '/idb',
   ServiceWorkerManagement = '/sw-mgmt',
+  ListManagement = '/list-management',
 }
 
 export function parseLocation(
