@@ -168,9 +168,9 @@ function viewServiceWorkerManagement(props: Props): ReactFragment {
   );
 }
 
-const ListManagement: FC<{ props: Props }> = () => {
+function viewListManagement(_: Props) {
   return <p>Manage your Twitter lists</p>;
-};
+}
 
 function viewUnknown(): ReactElement {
   return (
@@ -196,7 +196,7 @@ function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
     case Page.ServiceWorkerManagement:
       return viewServiceWorkerManagement(props);
     case Page.ListManagement:
-      return <ListManagement props={props} />;
+      return viewListManagement(props);
     case undefined:
       return viewUnknown();
     default:
@@ -205,23 +205,29 @@ function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
   }
 }
 
-function viewOneLink([k, v]: [string, string]): ReactElement {
+const OneNavLink: FC<{ href: string; name: string }> = ({ href, name }) => {
   return (
-    <a className="nav-item" href={'#' + v} key={`nav-${k}`}>
-      {k}
+    <a className="nav-item" href={href}>
+      {name}
     </a>
   );
-}
+};
 
-function viewLinks(): ReactElement[] {
-  return Object.entries(Page).map(viewOneLink);
-}
+const NavLinks: FC = () => {
+  return (
+    <nav>
+      {Object.entries(Page).map(([k, v]) => (
+        <OneNavLink href={'#' + v} name={k} key={'nav-' + name} />
+      ))}
+    </nav>
+  );
+};
 
 export function view(routing: Routing.Model, props: Props): ReactElement {
   return (
     <div id="react-main-view">
       <h1>Welcome to TwitAnalysis</h1>
-      <nav>{viewLinks()}</nav>
+      <NavLinks />
       <div id="toast-box">
         {props.model.errors.map((e, i) => (
           <div
