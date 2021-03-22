@@ -1,25 +1,72 @@
 import React, { FC } from 'react';
-import type * as Redux from 'redux';
 
-import * as core from './core';
-import { Effects } from './effects';
+import * as twitter from './twitter';
+import { t } from './twitter';
+import * as e from './effects';
+import { RemoteData } from './remote-data';
 
-type Props = {
-  model: core.Model;
-  dispatch: Redux.Dispatch<core.Msg>;
-  effects: Effects;
+type MyDispatch<T> = (_: T) => void;
+
+export type Model = {
+  allLists: RemoteData<twitter.List[], Error>;
+};
+
+export const init: Model = {
+  allLists: { type: 'idle' },
+};
+
+export type Msg =
+  // fetchLists
+  | { type: 'start_fetch_lists' }
+  | { type: 'receive_fetch_lists'; lists: twitter.List[] }
+  | { type: 'error_fetch_lists'; error: Error };
+
+export function update(model: Model, msg: Msg): Model {
+  switch (msg.type) {
+    case 'start_fetch_lists':
+    case 'receive_fetch_lists':
+    case 'error_fetch_lists': {
+      return model;
+    }
+  }
+}
+
+export class Effects {
+  constructor(private readonly dispatch: MyDispatch<Msg>) {}
+
+  fetchLists(): Msg {
+    e.fetchJson(t('lists/list') + '?reverse=true')
+      .then(twitter.parseArray(twitter.parseList))
+      .then(
+        (lists: twitter.List[]) => {
+          this.dispatch({ type: 'receive_fetch_lists', lists });
+        },
+        (e) => {
+          this.dispatch({ type: 'error_fetch_lists', error: e });
+        },
+      );
+    return { type: 'start_fetch_lists' };
+  }
+}
+
+export type Props = {
+  model: Model;
+  dispatch: MyDispatch<Msg>;
 };
 
 type Com<T = {}> = FC<{ props: Props } & T>;
 
-export const ListManagement: Com = () => {
+export const ListManagement: Com = ({ props: { dispatch } }) => {
+  const effects = new Effects(dispatch);
   const ListPicker = () => (
     <div className="list-picker">
       <select>
         <option value="foo">foo</option>
         <option value="bar">bar</option>
       </select>
-      <button type="button">refresh</button>
+      <button type="button" onClick={() => dispatch(effects.fetchLists())}>
+        refresh
+      </button>
     </div>
   );
 

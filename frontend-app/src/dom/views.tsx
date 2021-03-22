@@ -1,5 +1,4 @@
 import React, { ReactElement, ReactFragment, FC } from 'react';
-import type * as Redux from 'redux';
 
 import { Model, Msg, Page, parseLocation } from './core';
 import type { Effects } from './effects';
@@ -7,11 +6,12 @@ import * as Routing from './routing';
 import { Status } from './twitter';
 import * as F from './idb-fiddle';
 import { pretty, typecheckNever } from './utils';
+import * as listManagement from './list-management';
 import { ListManagement } from './list-management';
 
 type Props = {
   model: Model;
-  dispatch: Redux.Dispatch<Msg>;
+  dispatch: (_: Msg) => void;
   effects: Effects;
 };
 
@@ -192,8 +192,14 @@ function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
       return viewIndexDBFiddle(props);
     case Page.ServiceWorkerManagement:
       return viewServiceWorkerManagement(props);
-    case Page.ListManagement:
-      return <ListManagement props={props} />;
+    case Page.ListManagement: {
+      const smallProps: listManagement.Props = {
+        model: props.model.listManagement,
+        dispatch: (inner: listManagement.Msg) =>
+          props.dispatch({ type: 'list_management', inner }),
+      };
+      return <ListManagement props={smallProps} />;
+    }
     case undefined:
       return viewUnknown();
     default:

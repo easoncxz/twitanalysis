@@ -2,7 +2,7 @@ import type { Dispatch } from 'redux';
 
 import * as core from './core';
 import * as tdb from './twit-db';
-import { User, Status, t, parseUser, parseStatus, parseList } from './twitter';
+import { User, Status, t, parseUser, parseStatus, parseArray } from './twitter';
 
 export type Effects = {
   noop(): core.Msg;
@@ -33,7 +33,10 @@ function guardOk(r: Response): Response {
   }
 }
 
-async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
+export async function fetchJson(
+  url: string,
+  init?: RequestInit,
+): Promise<unknown> {
   return fetch(url, init)
     .then(guardOk)
     .then((r) => r.json());
@@ -72,7 +75,7 @@ export const effectsOf = (dispatch: Dispatch<core.Msg>): Effects => {
         searchParams.append('max_id', max_id);
       }
       fetchJson(t('favorites/list') + '?' + searchParams.toString())
-        .then(parseList(parseStatus))
+        .then(parseArray(parseStatus))
         .then(
           (statuses: Status[]) => {
             dispatch({ type: 'receive_fetch_faves', statuses });

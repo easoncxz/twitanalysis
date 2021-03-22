@@ -40,7 +40,7 @@ export async function parseStatus(j: unknown): Promise<Status> {
   return o as Status;
 }
 
-export const parseList = <T>(elem: (_: unknown) => Promise<T>) => async (
+export const parseArray = <T>(elem: (_: unknown) => Promise<T>) => async (
   j: unknown,
 ): Promise<T[]> => {
   if (!(j instanceof Array)) {
@@ -53,6 +53,37 @@ export const parseList = <T>(elem: (_: unknown) => Promise<T>) => async (
   }
   return out;
 };
+
+/**
+ * See docs for GET lists/list:
+ *
+ *   - https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-list
+ */
+export type List = {
+  slug: string;
+  name: string;
+  created_at: string; // "Sat Feb 27 21:39:24 +0000 2010"
+  uri: string; // "/twitterapi/meetup-20100301"
+  subscriber_count: number;
+  member_count: number;
+  id: number;
+  id_str: string;
+  mode: 'public';
+  full_name: string; // "@twitterapi/meetup-20100301"
+  description: string; // long description
+  user: User;
+  following: boolean;
+};
+
+export async function parseList(j: unknown): Promise<List> {
+  const o = await parseObject(j);
+  for (const k of ['slug', 'subscriber_count', 'member_count', 'description']) {
+    if (!(k in o)) {
+      throw new Error(`Key ${k} missing from List object: ${o}`);
+    }
+  }
+  return o as List;
+}
 
 /**
  * Shorthand to connect to the OAuth pass-thru endpoint on the Haskell side
