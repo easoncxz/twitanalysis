@@ -1,6 +1,6 @@
 import * as history from 'history';
 
-import { typecheckNever } from './utils';
+import { typecheckNever } from './utils/utils';
 
 type MyLocationState = unknown;
 type Location = history.Location<MyLocationState>;

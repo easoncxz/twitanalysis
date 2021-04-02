@@ -1,3 +1,4 @@
+import React from 'react';
 import { openDB } from 'idb';
 import type {
   IDBPDatabase,
@@ -84,3 +85,29 @@ export async function clearTable(db: IDBPDatabase<MyDB>): Promise<void> {
   await os.clear();
   return tx.done;
 }
+
+export const View: React.FC = () => {
+  return (
+    <>
+      <p>Click the button to run the logic.</p>
+      <button
+        onClick={async () => {
+          const db = await openMyDB();
+          await insertSomeData(db, things);
+          return db.close();
+        }}
+      >
+        Insert some data
+      </button>
+      <button
+        onClick={async () => {
+          const db = await openMyDB();
+          await clearTable(db);
+          return db.close();
+        }}
+      >
+        Clear the table
+      </button>
+    </>
+  );
+};

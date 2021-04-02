@@ -1,9 +1,9 @@
 import React, { FC } from 'react';
 
-import * as twitter from './twitter';
-import { t } from './twitter';
-import * as e from './effects';
-import { RemoteData } from './remote-data';
+import * as twitter from '../twitter/models';
+import { t } from '../twitter/models';
+import * as e from '../effects';
+import { RemoteData } from '../utils/remote-data';
 
 type MyDispatch<T> = (_: T) => void;
 

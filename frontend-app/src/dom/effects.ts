@@ -1,8 +1,15 @@
 import type { Dispatch } from 'redux';
 
 import * as core from './core';
-import * as tdb from './twit-db';
-import { User, Status, t, parseUser, parseStatus, parseArray } from './twitter';
+import * as tdb from './twitter/storage';
+import {
+  User,
+  Status,
+  t,
+  parseUser,
+  parseStatus,
+  parseArray,
+} from './twitter/models';
 
 export type Effects = {
   noop(): core.Msg;

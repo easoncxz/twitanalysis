@@ -1,7 +1,7 @@
 import { openDB, deleteDB } from 'idb';
 import type { IDBPDatabase, IDBPTransaction, DBSchema } from 'idb';
 
-import { User, Status } from './twitter';
+import { User, Status } from './models';
 
 interface TwitDb extends DBSchema {
   tweets: {

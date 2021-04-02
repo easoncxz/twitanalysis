@@ -2,12 +2,12 @@ import React, { ReactElement, ReactFragment, FC } from 'react';
 
 import { Model, Msg, Page, parseLocation } from './core';
 import type { Effects } from './effects';
-import * as Routing from './routing';
-import { Status } from './twitter';
-import * as F from './idb-fiddle';
-import { pretty, typecheckNever } from './utils';
-import * as listManagement from './list-management';
-import { ListManagement } from './list-management';
+import * as Router from './router';
+import { Status } from './twitter/models';
+import * as idbF from './pages/idb-fiddle';
+import { pretty, typecheckNever } from './utils/utils';
+import * as listManagement from './pages/list-management';
+import { ListManagement } from './pages/list-management';
 
 type Props = {
   model: Model;
@@ -124,32 +124,6 @@ function viewSendTweet({ model, dispatch, effects }: Props): ReactElement {
   );
 }
 
-function viewIndexDBFiddle(_props: Props): ReactFragment {
-  return (
-    <>
-      <p>Click the button to run the logic.</p>
-      <button
-        onClick={async () => {
-          const db = await F.openMyDB();
-          await F.insertSomeData(db, F.things);
-          return db.close();
-        }}
-      >
-        Insert some data
-      </button>
-      <button
-        onClick={async () => {
-          const db = await F.openMyDB();
-          await F.clearTable(db);
-          return db.close();
-        }}
-      >
-        Clear the table
-      </button>
-    </>
-  );
-}
-
 function viewServiceWorkerManagement(props: Props): ReactFragment {
   return (
     <>
@@ -177,7 +151,7 @@ function viewUnknown(): ReactElement {
   );
 }
 
-function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
+function viewContent({ location }: Router.Model, props: Props): ReactFragment {
   const page = parseLocation(location);
   switch (page) {
     case Page.Home:
@@ -189,7 +163,7 @@ function viewContent({ location }: Routing.Model, props: Props): ReactFragment {
     case Page.SendTweet:
       return viewSendTweet(props);
     case Page.IndexDBFiddle:
-      return viewIndexDBFiddle(props);
+      return <idbF.View />;
     case Page.ServiceWorkerManagement:
       return viewServiceWorkerManagement(props);
     case Page.ListManagement: {
@@ -226,7 +200,7 @@ const NavLinks: FC = () => {
   );
 };
 
-export function view(routing: Routing.Model, props: Props): ReactElement {
+export function view(routing: Router.Model, props: Props): ReactElement {
   return (
     <div id="react-main-view">
       <h1>Welcome to TwitAnalysis</h1>

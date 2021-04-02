@@ -1,8 +1,8 @@
 import type * as history from 'history';
 
-import { User, Status } from './twitter';
-import { typecheckNever, stringEnumValues } from './utils';
-import * as listManagement from './list-management';
+import { User, Status } from './twitter/models';
+import { typecheckNever, stringEnumValues } from './utils/utils';
+import * as listManagement from './pages/list-management';
 
 export type Model = {
   // Data
