@@ -21,7 +21,13 @@ export type Msg =
   | { type: 'receive_fetch_lists'; lists: twitter.List[] }
   | { type: 'error_fetch_lists'; error: Error };
 
-export function update(model: Model, msg: Msg): Model {
+export const reduce = (init: Model) => (
+  model: Model | undefined,
+  msg: Msg,
+): Model => {
+  if (model === undefined) {
+    return init;
+  }
   switch (msg.type) {
     case 'start_fetch_lists':
     case 'receive_fetch_lists':
@@ -29,7 +35,7 @@ export function update(model: Model, msg: Msg): Model {
       return model;
     }
   }
-}
+};
 
 export class Effects {
   constructor(private readonly dispatch: MyDispatch<Msg>) {}

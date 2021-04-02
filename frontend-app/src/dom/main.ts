@@ -6,6 +6,7 @@ import { createHashHistory } from 'history';
 
 import * as core from './core';
 import * as router from './router';
+import * as listManagement from './pages/list-management';
 import { view } from './views';
 import { effectsOf } from './effects';
 import { typecheckNever } from './utils/utils';
@@ -13,11 +14,13 @@ import { typecheckNever } from './utils/utils';
 type Model = {
   core: core.Model;
   router: router.Model;
+  listManagement: listManagement.Model;
 };
 
 type Msg =
   | { type: 'core'; sub: core.Msg }
-  | { type: 'router'; sub: router.Msg };
+  | { type: 'router'; sub: router.Msg }
+  | { type: 'list_management'; sub: listManagement.Msg };
 
 const liftMsg = {
   core(sub: core.Msg): Msg {
@@ -26,11 +29,15 @@ const liftMsg = {
   router(sub: router.Msg): Msg {
     return { type: 'router', sub };
   },
+  listManagement(sub: listManagement.Msg): Msg {
+    return { type: 'list_management', sub };
+  },
 };
 
 type Dispatches = {
   core: Redux.Dispatch<core.Msg>;
   router: Redux.Dispatch<router.Msg>;
+  listManagement: Redux.Dispatch<listManagement.Msg>;
 };
 
 const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
@@ -44,6 +51,10 @@ const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
   },
   router(m) {
     dispatch(liftMsg.router(m));
+    return m;
+  },
+  listManagement(m) {
+    dispatch(liftMsg.listManagement(m));
     return m;
   },
 });
@@ -63,6 +74,14 @@ const reduce = (init: Model) => (model: Model | undefined, msg: Msg): Model => {
         ...model,
         router: router.reduce(init.router)(model.router, msg.sub),
       };
+    case 'list_management':
+      return {
+        ...model,
+        listManagement: listManagement.reduce(listManagement.init)(
+          model.listManagement,
+          msg.sub,
+        ),
+      };
     default:
       typecheckNever(msg);
       return model;
@@ -76,6 +95,7 @@ const hist = createHashHistory();
 const init: Model = {
   core: core.init,
   router: { location: hist.location },
+  listManagement: listManagement.init,
 };
 
 const store: Redux.Store<Model, Msg> = Redux.createStore(reduce(init));
@@ -83,14 +103,21 @@ const store: Redux.Store<Model, Msg> = Redux.createStore(reduce(init));
 const dispatches = splitDispatch(store.dispatch);
 
 const render = () => {
-  void ReactDOM.render(
-    view(store.getState().router, {
-      model: store.getState().core,
-      dispatch: dispatches.core,
+  console.log(`About to call ReactDOM.render...`);
+  ReactDOM.render(
+    view({
+      models: store.getState(),
+      dispatches,
       effects: effectsOf(dispatches.core),
     }),
     mountpoint,
+    () => {
+      console.log(
+        `This is part of the 3rd-arg callback passed to ReactDOM.render`,
+      );
+    },
   );
+  console.log(`ReactDOM.render returned.`);
 };
 
 const bootstrap = async () => {

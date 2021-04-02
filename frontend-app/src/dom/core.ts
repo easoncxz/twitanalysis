@@ -2,14 +2,12 @@ import type * as history from 'history';
 
 import { User, Status } from './twitter/models';
 import { typecheckNever, stringEnumValues } from './utils/utils';
-import * as listManagement from './pages/list-management';
 
 export type Model = {
   // Data
   user?: User;
   sentTweets: Status[];
   faves: Status[];
-  listManagement: listManagement.Model;
 
   // UI
   pendingTweet: string;
@@ -36,8 +34,6 @@ export type Msg =
   | { type: 'start_fetch_faves' }
   | { type: 'receive_fetch_faves'; statuses: Status[] }
   | { type: 'error_fetch_faves'; error: Error }
-  // listManagement
-  | { type: 'list_management'; inner: listManagement.Msg }
   // idb general
   | { type: 'idb_creating_db' }
   | { type: 'idb_created_db' }
@@ -85,7 +81,6 @@ export const init: Model = {
   fetchingMe: false,
   fetchingFaves: false,
   sendingTweet: false,
-  listManagement: listManagement.init,
 };
 
 export const reduce = (init: Model) => (
@@ -153,12 +148,6 @@ export const reduce = (init: Model) => (
         ...model,
         fetchingFaves: false,
         errors: model.errors.concat([msg.error]),
-      };
-    }
-    case 'list_management': {
-      return {
-        ...model,
-        listManagement: listManagement.update(model.listManagement, msg.inner),
       };
     }
     case 'idb_creating_db':

@@ -1,56 +1,47 @@
 import React, { ReactElement, ReactFragment, FC } from 'react';
 
-import { Model, Msg, Page, parseLocation } from './core';
-import type { Effects } from './effects';
-import * as Router from './router';
+import { Page, parseLocation } from './core';
+import * as core from './core';
+import * as effects from './effects';
+import * as router from './router';
 import { Status } from './twitter/models';
 import * as idbF from './pages/idb-fiddle';
-import { pretty, typecheckNever } from './utils/utils';
+import { typecheckNever } from './utils/utils';
+import * as fetchMe from './pages/fetch-me';
 import * as listManagement from './pages/list-management';
 import { ListManagement } from './pages/list-management';
 
+type MyDispatch<T> = (_: T) => void;
+
 type Props = {
-  model: Model;
-  dispatch: (_: Msg) => void;
-  effects: Effects;
+  models: {
+    core: core.Model;
+    listManagement: listManagement.Model;
+    router: router.Model;
+  };
+  dispatches: {
+    core: MyDispatch<core.Msg>;
+    listManagement: MyDispatch<listManagement.Msg>;
+    router: MyDispatch<router.Msg>;
+  };
+  effects: effects.Effects;
 };
 
-function viewFetchMe({ model, dispatch, effects }: Props): ReactElement {
-  return (
-    <div>
-      <h1>Fetch own user</h1>
-      {model.user ? (
-        <div>
-          <p>You are:</p>
-          <pre>{pretty(model.user)}</pre>
-        </div>
-      ) : (
-        <div>
-          {model.fetchingMe ? <p>Fetching...</p> : null}
-          <button
-            onClick={() => dispatch(effects.fetchMe())}
-            disabled={model.fetchingMe}
-          >
-            Tell me who I am
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
+function viewFetchFaves({ models, dispatches, effects }: Props): ReactFragment {
   const go = () =>
-    dispatch(
-      effects.fetchFaves(model.user?.screen_name ?? model.faveNick, {
-        count: 200,
-        max_id: model.faves.length
-          ? model.faves[model.faves.length - 1].id_str
-          : undefined,
-      }),
+    dispatches.core(
+      effects.fetchFaves(
+        models.core.user?.screen_name ?? models.core.faveNick,
+        {
+          count: 200,
+          max_id: models.core.faves.length
+            ? models.core.faves[models.core.faves.length - 1].id_str
+            : undefined,
+        },
+      ),
     );
-  const faveList = model.faves
-    .filter((f) => new RegExp(model.searchFaves ?? '.').exec(f.text))
+  const faveList = models.core.faves
+    .filter((f) => new RegExp(models.core.searchFaves ?? '.').exec(f.text))
     .map((f: Status, i: number) => <li key={'fave-' + String(i)}>{f.text}</li>);
   return (
     <>
@@ -58,18 +49,20 @@ function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
         <span>Fetch your favourited tweets</span>
         <input
           type="text"
-          value={model.user?.screen_name ?? model.faveNick}
+          value={models.core.user?.screen_name ?? models.core.faveNick}
           onChange={(e) =>
-            dispatch({ type: 'update_fave_nick', nick: e.target.value })
+            dispatches.core({ type: 'update_fave_nick', nick: e.target.value })
           }
         />
-        <button onClick={go} disabled={model.fetchingFaves}>
+        <button onClick={go} disabled={models.core.fetchingFaves}>
           Fetch from Twitter
         </button>
-        <button onClick={() => dispatch(effects.readAllTweets())}>
+        <button onClick={() => dispatches.core(effects.readAllTweets())}>
           Load from IndexedDB
         </button>
-        <button onClick={() => dispatch(effects.putTweets(model.faves))}>
+        <button
+          onClick={() => dispatches.core(effects.putTweets(models.core.faves))}
+        >
           Save to IndexedDB
         </button>
       </div>
@@ -77,9 +70,12 @@ function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
         <span>Search:</span>
         <input
           type="text"
-          value={model.searchFaves ?? ''}
+          value={models.core.searchFaves ?? ''}
           onChange={(e) =>
-            dispatch({ type: 'update_search_faves', search: e.target.value })
+            dispatches.core({
+              type: 'update_search_faves',
+              search: e.target.value,
+            })
           }
         />
       </div>
@@ -88,33 +84,36 @@ function viewFetchFaves({ model, dispatch, effects }: Props): ReactFragment {
   );
 }
 
-function viewSendTweet({ model, dispatch, effects }: Props): ReactElement {
+function viewSendTweet({ models, dispatches, effects }: Props): ReactElement {
   return (
     <div>
       <h2>Send tweet</h2>
       <form action="">
         <textarea
-          value={model.pendingTweet}
+          value={models.core.pendingTweet}
           onChange={(e) => {
-            dispatch({ type: 'update_pending_tweet', text: e.target.value });
+            dispatches.core({
+              type: 'update_pending_tweet',
+              text: e.target.value,
+            });
           }}
-          disabled={model.sendingTweet}
+          disabled={models.core.sendingTweet}
         ></textarea>
         <br />
-        <pre>{model.pendingTweet}</pre>
+        <pre>{models.core.pendingTweet}</pre>
         <input
           type="submit"
           onClick={(e) => {
             e.preventDefault();
-            dispatch(effects.sendTweet(model.pendingTweet));
+            dispatches.core(effects.sendTweet(models.core.pendingTweet));
           }}
-          disabled={model.sendingTweet}
+          disabled={models.core.sendingTweet}
           value="Send this tweet"
         />
       </form>
       <p>Sent tweets:</p>
       <ul>
-        {model.sentTweets.map((st, i) => (
+        {models.core.sentTweets.map((st, i) => (
           <li key={`sentTweets-${i}`}>
             <code>{st.created_at}</code> - {st.text}
           </li>
@@ -128,13 +127,15 @@ function viewServiceWorkerManagement(props: Props): ReactFragment {
   return (
     <>
       <button
-        onClick={() => props.dispatch(props.effects.registerServiceWorker())}
+        onClick={() =>
+          props.dispatches.core(props.effects.registerServiceWorker())
+        }
       >
         register ServiceWorker
       </button>
       <button
         onClick={() =>
-          props.dispatch(props.effects.unregisterAllServiceWorkers())
+          props.dispatches.core(props.effects.unregisterAllServiceWorkers())
         }
       >
         unregister all ServiceWorkers
@@ -151,13 +152,20 @@ function viewUnknown(): ReactElement {
   );
 }
 
-function viewContent({ location }: Router.Model, props: Props): ReactFragment {
+function viewContent(props: Props): ReactFragment {
+  const { location } = props.models.router;
   const page = parseLocation(location);
   switch (page) {
     case Page.Home:
       return <p>Please click through the nav menu!</p>;
     case Page.FetchMe:
-      return viewFetchMe(props);
+      return (
+        <fetchMe.View
+          model={props.models.core}
+          dispatch={props.dispatches.core}
+          effects={props.effects}
+        />
+      );
     case Page.FetchFaves:
       return viewFetchFaves(props);
     case Page.SendTweet:
@@ -168,9 +176,9 @@ function viewContent({ location }: Router.Model, props: Props): ReactFragment {
       return viewServiceWorkerManagement(props);
     case Page.ListManagement: {
       const smallProps: listManagement.Props = {
-        model: props.model.listManagement,
+        model: props.models.listManagement,
         dispatch: (inner: listManagement.Msg) =>
-          props.dispatch({ type: 'list_management', inner }),
+          props.dispatches.listManagement(inner),
       };
       return <ListManagement props={smallProps} />;
     }
@@ -200,17 +208,19 @@ const NavLinks: FC = () => {
   );
 };
 
-export function view(routing: Router.Model, props: Props): ReactElement {
+export function view(props: Props): ReactElement {
   return (
     <div id="react-main-view">
       <h1>Welcome to TwitAnalysis</h1>
       <NavLinks />
       <div id="toast-box">
-        {props.model.errors.map((e, i) => (
+        {props.models.core.errors.map((e, i) => (
           <div
             key={`error-toast-${i}`}
             className="error-toast"
-            onClick={() => props.dispatch({ type: 'clear_error', error: e })}
+            onClick={() =>
+              props.dispatches.core({ type: 'clear_error', error: e })
+            }
           >
             <code>
               {e.name}: {e.message}
@@ -220,7 +230,7 @@ export function view(routing: Router.Model, props: Props): ReactElement {
         ))}
       </div>
       <hr />
-      {viewContent(routing, props)}
+      {viewContent(props)}
     </div>
   );
 }
