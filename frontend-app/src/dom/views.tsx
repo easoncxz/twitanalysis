@@ -202,7 +202,7 @@ const NavLinks: FC = () => {
   return (
     <nav>
       {Object.entries(Page).map(([k, v]) => (
-        <OneNavLink href={'#' + v} name={k} key={'nav-' + name} />
+        <OneNavLink href={'#' + v} name={k} key={'nav-' + k} />
       ))}
     </nav>
   );
