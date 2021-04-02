@@ -1,15 +1,15 @@
 import React, { ReactElement, ReactFragment, FC } from 'react';
 
-import { Page, parseLocation } from './core';
 import * as core from './core';
 import * as effects from './effects';
-import * as router from './router';
-import { Status } from './twitter/models';
-import * as idbF from './pages/idb-fiddle';
-import { typecheckNever } from './utils/utils';
+import * as fetchFaves from './pages/fetch-faves';
 import * as fetchMe from './pages/fetch-me';
+import * as idbF from './pages/idb-fiddle';
 import * as listManagement from './pages/list-management';
+import * as router from './router';
 import { ListManagement } from './pages/list-management';
+import { Page, parseLocation } from './core';
+import { typecheckNever } from './utils/utils';
 
 type MyDispatch<T> = (_: T) => void;
 
@@ -26,63 +26,6 @@ type Props = {
   };
   effects: effects.Effects;
 };
-
-function viewFetchFaves({ models, dispatches, effects }: Props): ReactFragment {
-  const go = () =>
-    dispatches.core(
-      effects.fetchFaves(
-        models.core.user?.screen_name ?? models.core.faveNick,
-        {
-          count: 200,
-          max_id: models.core.faves.length
-            ? models.core.faves[models.core.faves.length - 1].id_str
-            : undefined,
-        },
-      ),
-    );
-  const faveList = models.core.faves
-    .filter((f) => new RegExp(models.core.searchFaves ?? '.').exec(f.text))
-    .map((f: Status, i: number) => <li key={'fave-' + String(i)}>{f.text}</li>);
-  return (
-    <>
-      <div>
-        <span>Fetch your favourited tweets</span>
-        <input
-          type="text"
-          value={models.core.user?.screen_name ?? models.core.faveNick}
-          onChange={(e) =>
-            dispatches.core({ type: 'update_fave_nick', nick: e.target.value })
-          }
-        />
-        <button onClick={go} disabled={models.core.fetchingFaves}>
-          Fetch from Twitter
-        </button>
-        <button onClick={() => dispatches.core(effects.readAllTweets())}>
-          Load from IndexedDB
-        </button>
-        <button
-          onClick={() => dispatches.core(effects.putTweets(models.core.faves))}
-        >
-          Save to IndexedDB
-        </button>
-      </div>
-      <div>
-        <span>Search:</span>
-        <input
-          type="text"
-          value={models.core.searchFaves ?? ''}
-          onChange={(e) =>
-            dispatches.core({
-              type: 'update_search_faves',
-              search: e.target.value,
-            })
-          }
-        />
-      </div>
-      {faveList.length > 0 ? <ul>{faveList}</ul> : <p>No faves</p>}
-    </>
-  );
-}
 
 function viewSendTweet({ models, dispatches, effects }: Props): ReactElement {
   return (
@@ -167,7 +110,13 @@ function viewContent(props: Props): ReactFragment {
         />
       );
     case Page.FetchFaves:
-      return viewFetchFaves(props);
+      return (
+        <fetchFaves.View
+          model={props.models.core}
+          dispatch={props.dispatches.core}
+          effects={props.effects}
+        />
+      );
     case Page.SendTweet:
       return viewSendTweet(props);
     case Page.IndexDBFiddle:
