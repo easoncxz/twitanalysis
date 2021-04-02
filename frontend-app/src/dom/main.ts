@@ -22,18 +22,6 @@ type Msg =
   | { type: 'router'; sub: router.Msg }
   | { type: 'list_management'; sub: listManagement.Msg };
 
-const liftMsg = {
-  core(sub: core.Msg): Msg {
-    return { type: 'core', sub };
-  },
-  router(sub: router.Msg): Msg {
-    return { type: 'router', sub };
-  },
-  listManagement(sub: listManagement.Msg): Msg {
-    return { type: 'list_management', sub };
-  },
-};
-
 type Dispatches = {
   core: Redux.Dispatch<core.Msg>;
   router: Redux.Dispatch<router.Msg>;
@@ -41,21 +29,21 @@ type Dispatches = {
 };
 
 const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
-  core(m) {
+  core(sub) {
     // Subtle!!
-    // Cannot return `dispatch(liftMsg.core(m)).sub`, because once
+    // Cannot return `dispatch({ type: 'core', sub })`, because once
     // data flows through the bigger `dispatch`, the returned bigger
     // `Msg` could very well be `router.Msg` from the other branch!
-    dispatch(liftMsg.core(m));
-    return m;
+    dispatch({ type: 'core', sub });
+    return sub;
   },
-  router(m) {
-    dispatch(liftMsg.router(m));
-    return m;
+  router(sub) {
+    dispatch({ type: 'router', sub });
+    return sub;
   },
-  listManagement(m) {
-    dispatch(liftMsg.listManagement(m));
-    return m;
+  listManagement(sub) {
+    dispatch({ type: 'list_management', sub });
+    return sub;
   },
 });
 
