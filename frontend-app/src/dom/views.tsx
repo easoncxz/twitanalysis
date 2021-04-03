@@ -7,6 +7,7 @@ import * as fetchMe from './pages/fetch-me';
 import * as idbF from './pages/idb-fiddle';
 import * as sendTweet from './pages/send-tweet';
 import * as listManagement from './pages/list-management';
+import * as serviceWorkerManagement from './pages/service-worker-management';
 import * as router from './router';
 import { ListManagement } from './pages/list-management';
 import { Page, parseLocation } from './core';
@@ -27,27 +28,6 @@ type Props = {
   };
   effects: effects.Effects;
 };
-
-function viewServiceWorkerManagement(props: Props): ReactFragment {
-  return (
-    <>
-      <button
-        onClick={() =>
-          props.dispatches.core(props.effects.registerServiceWorker())
-        }
-      >
-        register ServiceWorker
-      </button>
-      <button
-        onClick={() =>
-          props.dispatches.core(props.effects.unregisterAllServiceWorkers())
-        }
-      >
-        unregister all ServiceWorkers
-      </button>
-    </>
-  );
-}
 
 function viewUnknown(): ReactElement {
   return (
@@ -92,7 +72,7 @@ function viewContent(props: Props): ReactFragment {
     case Page.IndexDBFiddle:
       return <idbF.View />;
     case Page.ServiceWorkerManagement:
-      return viewServiceWorkerManagement(props);
+      return serviceWorkerManagement.view(props.dispatches.core, props.effects);
     case Page.ListManagement: {
       const smallProps: listManagement.Props = {
         model: props.models.listManagement,
