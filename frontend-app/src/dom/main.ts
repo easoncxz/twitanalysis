@@ -8,7 +8,7 @@ import * as core from './core';
 import * as router from './router';
 import * as listManagement from './pages/list-management';
 import { view } from './views';
-import { effectsOf } from './effects';
+import { Effects } from './effects';
 import { typecheckNever } from './utils/utils';
 
 type Model = {
@@ -90,13 +90,15 @@ const store: Redux.Store<Model, Msg> = Redux.createStore(reduce(init));
 
 const dispatches = splitDispatch(store.dispatch);
 
+const coreEffects = new Effects(dispatches.core);
+
 const render = () => {
   console.log(`About to call ReactDOM.render...`);
   ReactDOM.render(
     view({
       models: store.getState(),
       dispatches,
-      effects: effectsOf(dispatches.core),
+      effects: coreEffects,
     }),
     mountpoint,
     () => {
@@ -124,7 +126,7 @@ if (typeof window === 'object') {
     get state() {
       return store.getState();
     },
-    effects: effectsOf(dispatches.core),
+    effects: coreEffects,
   };
   window.addEventListener('load', bootstrap);
 }
