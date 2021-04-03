@@ -5,6 +5,7 @@ import * as effects from './effects';
 import * as fetchFaves from './pages/fetch-faves';
 import * as fetchMe from './pages/fetch-me';
 import * as idbF from './pages/idb-fiddle';
+import * as sendTweet from './pages/send-tweet';
 import * as listManagement from './pages/list-management';
 import * as router from './router';
 import { ListManagement } from './pages/list-management';
@@ -26,45 +27,6 @@ type Props = {
   };
   effects: effects.Effects;
 };
-
-function viewSendTweet({ models, dispatches, effects }: Props): ReactElement {
-  return (
-    <div>
-      <h2>Send tweet</h2>
-      <form action="">
-        <textarea
-          value={models.core.pendingTweet}
-          onChange={(e) => {
-            dispatches.core({
-              type: 'update_pending_tweet',
-              text: e.target.value,
-            });
-          }}
-          disabled={models.core.sendingTweet}
-        ></textarea>
-        <br />
-        <pre>{models.core.pendingTweet}</pre>
-        <input
-          type="submit"
-          onClick={(e) => {
-            e.preventDefault();
-            dispatches.core(effects.sendTweet(models.core.pendingTweet));
-          }}
-          disabled={models.core.sendingTweet}
-          value="Send this tweet"
-        />
-      </form>
-      <p>Sent tweets:</p>
-      <ul>
-        {models.core.sentTweets.map((st, i) => (
-          <li key={`sentTweets-${i}`}>
-            <code>{st.created_at}</code> - {st.text}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 function viewServiceWorkerManagement(props: Props): ReactFragment {
   return (
@@ -118,7 +80,15 @@ function viewContent(props: Props): ReactFragment {
         />
       );
     case Page.SendTweet:
-      return viewSendTweet(props);
+      return (
+        <>
+          {sendTweet.View({
+            model: props.models.core,
+            dispatch: props.dispatches.core,
+            effects: props.effects,
+          })}
+        </>
+      );
     case Page.IndexDBFiddle:
       return <idbF.View />;
     case Page.ServiceWorkerManagement:
