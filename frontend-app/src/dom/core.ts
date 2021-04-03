@@ -1,7 +1,5 @@
-import type * as history from 'history';
-
 import { User, Status } from './twitter/models';
-import { typecheckNever, stringEnumValues } from './utils/utils';
+import { typecheckNever } from './utils/utils';
 
 export type Model = {
   // Data
@@ -225,24 +223,3 @@ export const reduce = (init: Model) => (
       return model;
   }
 };
-
-export enum Page {
-  Home = '/',
-  FetchMe = '/fetch-me',
-  SendTweet = '/send-tweet',
-  FetchFaves = '/fetch-faves',
-  IndexDBFiddle = '/idb',
-  ServiceWorkerManagement = '/sw-mgmt',
-  ListManagement = '/list-management',
-}
-
-export function parseLocation(
-  location: history.Location<unknown>,
-): Page | undefined {
-  for (const page of stringEnumValues(Page)) {
-    if (location.pathname === page) {
-      return page;
-    }
-  }
-  return undefined;
-}

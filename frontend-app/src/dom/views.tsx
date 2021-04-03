@@ -1,4 +1,5 @@
 import React, { ReactElement, ReactFragment, FC } from 'react';
+import type * as history from 'history';
 
 import * as core from './core';
 import * as effects from './effects';
@@ -10,8 +11,7 @@ import * as listManagement from './pages/list-management';
 import * as serviceWorkerManagement from './pages/service-worker-management';
 import * as router from './router';
 import { ListManagement } from './pages/list-management';
-import { Page, parseLocation } from './core';
-import { typecheckNever } from './utils/utils';
+import { typecheckNever, stringEnumValues } from './utils/utils';
 
 type MyDispatch<T> = (_: T) => void;
 
@@ -35,6 +35,27 @@ function viewUnknown(): ReactElement {
       Unknown route. You seem lost. <a href={'#' + Page.Home}>Go home</a>
     </p>
   );
+}
+
+export enum Page {
+  Home = '/',
+  FetchMe = '/fetch-me',
+  SendTweet = '/send-tweet',
+  FetchFaves = '/fetch-faves',
+  IndexDBFiddle = '/idb',
+  ServiceWorkerManagement = '/sw-mgmt',
+  ListManagement = '/list-management',
+}
+
+export function parseLocation(
+  location: history.Location<unknown>,
+): Page | undefined {
+  for (const page of stringEnumValues(Page)) {
+    if (location.pathname === page) {
+      return page;
+    }
+  }
+  return undefined;
 }
 
 function viewContent(props: Props): ReactFragment {
