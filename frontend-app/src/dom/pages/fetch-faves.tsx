@@ -1,13 +1,78 @@
 import React from 'react';
 
-import { Status, t } from '../twitter/models';
+import { User, Status, t } from '../twitter/models';
 import * as twitter from '../twitter/models';
 import * as tdb from '../twitter/storage';
-import * as core from '../core';
-import { fetchJson } from '../utils/utils';
+import { fetchJson, typecheckNever } from '../utils/utils';
+import { RemoteData } from '../utils/remote-data';
+import * as remoteData from '../utils/remote-data';
+
+export type Model = {
+  faves: Status[];
+  networkFaves: RemoteData<Status[], Error>;
+  faveNick: string;
+  searchFaves?: string;
+};
+
+export const init: Model = {
+  faves: [],
+  networkFaves: { type: 'idle' },
+  faveNick: "(somebody's Twitter ID)",
+  searchFaves: undefined,
+};
+
+export type Msg =
+  | {
+      type: 'network_faves';
+      update: RemoteData<Status[], Error>;
+    }
+  | { type: 'update_fave_nick'; nick: string }
+  | { type: 'update_search_faves'; search: string }
+  | { type: 'receive_faves_from_idb'; statuses: Status[] };
+
+export const reduce = (user: RemoteData<User, Error>) => (init: Model) => (
+  model: Model | undefined,
+  msg: Msg,
+): Model => {
+  if (model === undefined) {
+    return init;
+  }
+  switch (msg.type) {
+    case 'network_faves': {
+      return {
+        ...model,
+        networkFaves: remoteData.reduce(model.networkFaves, msg.update),
+      };
+    }
+    case 'update_fave_nick': {
+      if (user.type === 'ok' || user.type === 'loading') {
+        // Ignore the upate; we will use the nick of the current user.
+        return { ...model };
+      }
+      return {
+        ...model,
+        faveNick: msg.nick,
+      };
+    }
+    case 'update_search_faves':
+      return {
+        ...model,
+        searchFaves: msg.search,
+      };
+    case 'receive_faves_from_idb':
+      return {
+        ...model,
+        faves: msg.statuses,
+      };
+
+    default:
+      typecheckNever(msg);
+      return model;
+  }
+};
 
 export class Effects {
-  constructor(private readonly dispatch: (_: core.Msg) => void) {}
+  constructor(private readonly dispatch: (_: Msg) => void) {}
 
   fetchFaves(
     nik: string,
@@ -20,7 +85,7 @@ export class Effects {
       max_id?: string;
       since_id?: string;
     },
-  ): core.Msg {
+  ): Msg {
     const searchParams = new URLSearchParams();
     searchParams.append('screen_name', nik);
     searchParams.append('count', count.toString());
@@ -32,26 +97,42 @@ export class Effects {
     }
     fetchJson(t('favorites/list') + '?' + searchParams.toString())
       .then(twitter.parseArray(twitter.parseStatus))
-      .then(
-        (statuses: Status[]) => {
-          this.dispatch({ type: 'receive_fetch_faves', statuses });
-        },
-        (e) => this.dispatch({ type: 'error_fetch_faves', error: e }),
+      .then(async (statuses: Status[]) => {
+        this.dispatch({
+          type: 'network_faves',
+          update: { type: 'ok', data: statuses },
+        });
+        await tdb.putTweets(statuses);
+        const ss = await tdb.readAllTweets();
+        this.dispatch({
+          type: 'receive_faves_from_idb',
+          statuses: ss,
+        });
+      })
+      .catch((e) =>
+        this.dispatch({
+          type: 'network_faves',
+          update: {
+            type: 'error',
+            error: e,
+          },
+        }),
       );
     return {
-      type: 'start_fetch_faves',
+      type: 'network_faves',
+      update: { type: 'loading' },
     };
   }
 }
 
 export const View: React.FC<{
-  model: core.Model;
-  dispatch: (_: core.Msg) => void;
-}> = ({ model, dispatch }) => {
+  user: RemoteData<User, Error>;
+  model: Model;
+  dispatch: (_: Msg) => void;
+}> = ({ user, model, dispatch }) => {
   const effects = new Effects(dispatch);
   const fetchFromNetwork = () => {
-    const nick =
-      model.user.type === 'ok' ? model.user.data.screen_name : model.faveNick;
+    const nick = user.type === 'ok' ? user.data.screen_name : model.faveNick;
     dispatch(
       effects.fetchFaves(nick, {
         count: 200,
@@ -64,28 +145,29 @@ export const View: React.FC<{
   const faveList = model.faves
     .filter((f) => new RegExp(model.searchFaves ?? '.').exec(f.text))
     .map((f: Status, i: number) => <li key={'fave-' + String(i)}>{f.text}</li>);
+
   return (
     <>
       <div>
         <span>Fetch your favourited tweets</span>
         <input
           type="text"
-          value={
-            model.user.type === 'ok'
-              ? model.user.data.screen_name
-              : model.faveNick
-          }
+          value={user.type === 'ok' ? user.data.screen_name : model.faveNick}
           onChange={(e) =>
             dispatch({ type: 'update_fave_nick', nick: e.target.value })
           }
         />
-        <button onClick={fetchFromNetwork} disabled={model.fetchingFaves}>
+        <button
+          onClick={fetchFromNetwork}
+          disabled={model.networkFaves.type === 'loading'}
+        >
           Fetch from Twitter
         </button>
         <button
           onClick={() => {
-            tdb.readAllTweets().then((ss: Status[]) => {
-              void ss;
+            console.log(`Reading faves from idb...`);
+            tdb.readAllTweets().then((statuses: Status[]) => {
+              dispatch({ type: 'receive_faves_from_idb', statuses });
             });
           }}
         >
@@ -93,9 +175,7 @@ export const View: React.FC<{
         </button>
         <button
           onClick={() => {
-            tdb.putTweets(model.faves).then(() => {
-              void 3;
-            });
+            tdb.putTweets(model.faves);
           }}
         >
           Save to IndexedDB

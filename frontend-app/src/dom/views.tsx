@@ -20,11 +20,13 @@ type Props = {
     core: core.Model;
     listManagement: listManagement.Model;
     router: router.Model;
+    fetchFaves: fetchFaves.Model;
   };
   dispatches: {
     core: MyDispatch<core.Msg>;
     listManagement: MyDispatch<listManagement.Msg>;
     router: MyDispatch<router.Msg>;
+    fetchFaves: MyDispatch<fetchFaves.Msg>;
   };
   effects: effects.Effects;
 };
@@ -81,8 +83,9 @@ function viewContent(props: Props): ReactFragment {
     case Page.FetchFaves:
       return (
         <fetchFaves.View
-          model={props.models.core}
-          dispatch={props.dispatches.core}
+          user={props.models.core.user}
+          model={props.models.fetchFaves}
+          dispatch={props.dispatches.fetchFaves}
         />
       );
     case Page.SendTweet:

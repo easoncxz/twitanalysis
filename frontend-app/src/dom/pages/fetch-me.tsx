@@ -10,22 +10,6 @@ export type Model = RemoteData<twitter.User, Error>;
 
 export type Msg = RemoteData<twitter.User, Error>;
 
-export function reduce(model: Model, msg: Msg): Model {
-  switch (msg.type) {
-    case 'idle':
-      return { type: 'idle' };
-    case 'loading':
-      return { type: 'loading' };
-    case 'ok':
-      return { type: 'ok', data: msg.data };
-    case 'error':
-      return { type: 'error', error: msg.error };
-    default:
-      typecheckNever(msg);
-      return model;
-  }
-}
-
 export class Effects {
   constructor(private readonly dispatch: (_: Msg) => unknown) {}
 

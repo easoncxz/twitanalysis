@@ -7,6 +7,7 @@ import { createHashHistory } from 'history';
 import * as core from './core';
 import * as router from './router';
 import * as listManagement from './pages/list-management';
+import * as fetchFaves from './pages/fetch-faves';
 import { view } from './views';
 import { Effects } from './effects';
 import { typecheckNever } from './utils/utils';
@@ -15,17 +16,20 @@ type Model = {
   core: core.Model;
   router: router.Model;
   listManagement: listManagement.Model;
+  fetchFaves: fetchFaves.Model;
 };
 
 type Msg =
   | { type: 'core'; sub: core.Msg }
   | { type: 'router'; sub: router.Msg }
-  | { type: 'list_management'; sub: listManagement.Msg };
+  | { type: 'list_management'; sub: listManagement.Msg }
+  | { type: 'fetch_faves'; sub: fetchFaves.Msg };
 
 type Dispatches = {
   core: Redux.Dispatch<core.Msg>;
   router: Redux.Dispatch<router.Msg>;
   listManagement: Redux.Dispatch<listManagement.Msg>;
+  fetchFaves: Redux.Dispatch<fetchFaves.Msg>;
 };
 
 const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
@@ -43,6 +47,10 @@ const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
   },
   listManagement(sub) {
     dispatch({ type: 'list_management', sub });
+    return sub;
+  },
+  fetchFaves(sub) {
+    dispatch({ type: 'fetch_faves', sub });
     return sub;
   },
 });
@@ -70,6 +78,14 @@ const reduce = (init: Model) => (model: Model | undefined, msg: Msg): Model => {
           msg.sub,
         ),
       };
+    case 'fetch_faves':
+      return {
+        ...model,
+        fetchFaves: fetchFaves.reduce(model.core.user)(fetchFaves.init)(
+          model.fetchFaves,
+          msg.sub,
+        ),
+      };
     default:
       typecheckNever(msg);
       return model;
@@ -84,6 +100,7 @@ const init: Model = {
   core: core.init,
   router: { location: hist.location },
   listManagement: listManagement.init,
+  fetchFaves: fetchFaves.init,
 };
 
 const store: Redux.Store<Model, Msg> = Redux.createStore(reduce(init));
