@@ -1,15 +1,55 @@
 import React from 'react';
 
-import { Status } from '../twitter/models';
-import * as effects from '../effects';
+import { Status, t } from '../twitter/models';
+import * as twitter from '../twitter/models';
+import * as tdb from '../twitter/storage';
 import * as core from '../core';
+import { fetchJson } from '../utils/utils';
+
+export class Effects {
+  constructor(private readonly dispatch: (_: core.Msg) => void) {}
+
+  fetchFaves(
+    nik: string,
+    {
+      count = 200,
+      since_id,
+      max_id,
+    }: {
+      count?: number;
+      max_id?: string;
+      since_id?: string;
+    },
+  ): core.Msg {
+    const searchParams = new URLSearchParams();
+    searchParams.append('screen_name', nik);
+    searchParams.append('count', count.toString());
+    if (since_id !== undefined) {
+      searchParams.append('since_id', since_id);
+    }
+    if (max_id !== undefined) {
+      searchParams.append('max_id', max_id);
+    }
+    fetchJson(t('favorites/list') + '?' + searchParams.toString())
+      .then(twitter.parseArray(twitter.parseStatus))
+      .then(
+        (statuses: Status[]) => {
+          this.dispatch({ type: 'receive_fetch_faves', statuses });
+        },
+        (e) => this.dispatch({ type: 'error_fetch_faves', error: e }),
+      );
+    return {
+      type: 'start_fetch_faves',
+    };
+  }
+}
 
 export const View: React.FC<{
   model: core.Model;
   dispatch: (_: core.Msg) => void;
-  effects: effects.Effects;
-}> = ({ model, dispatch, effects }) => {
-  const go = () => {
+}> = ({ model, dispatch }) => {
+  const effects = new Effects(dispatch);
+  const fetchFromNetwork = () => {
     const nick =
       model.user.type === 'ok' ? model.user.data.screen_name : model.faveNick;
     dispatch(
@@ -39,13 +79,25 @@ export const View: React.FC<{
             dispatch({ type: 'update_fave_nick', nick: e.target.value })
           }
         />
-        <button onClick={go} disabled={model.fetchingFaves}>
+        <button onClick={fetchFromNetwork} disabled={model.fetchingFaves}>
           Fetch from Twitter
         </button>
-        <button onClick={() => dispatch(effects.readAllTweets())}>
+        <button
+          onClick={() => {
+            tdb.readAllTweets().then((ss: Status[]) => {
+              void ss;
+            });
+          }}
+        >
           Load from IndexedDB
         </button>
-        <button onClick={() => dispatch(effects.putTweets(model.faves))}>
+        <button
+          onClick={() => {
+            tdb.putTweets(model.faves).then(() => {
+              void 3;
+            });
+          }}
+        >
           Save to IndexedDB
         </button>
       </div>

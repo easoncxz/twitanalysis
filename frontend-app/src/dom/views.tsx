@@ -83,7 +83,6 @@ function viewContent(props: Props): ReactFragment {
         <fetchFaves.View
           model={props.models.core}
           dispatch={props.dispatches.core}
-          effects={props.effects}
         />
       );
     case Page.SendTweet:

@@ -60,3 +60,68 @@ export async function withDB<T>(
 ): Promise<T> {
   return openMyDB().then(action);
 }
+
+// ------
+// a bunch of single-transaction actions follows
+// ------
+
+export function saveUser(user: User): Promise<void> {
+  return withDB(async (db) => {
+    const tx = db.transaction('users', 'readwrite');
+    const users = tx.objectStore('users');
+    await users.add(user);
+    return tx.done;
+  });
+}
+
+export function readUser(id_str: string): Promise<User | undefined> {
+  return withDB(async (db) => {
+    const tx = db.transaction('users');
+    const users = tx.store;
+    return users.get(id_str);
+  });
+}
+
+/**
+ * Seems to return stored Status ID
+ */
+export function putTweet(s: Status): Promise<string> {
+  return withDB(async (db) => {
+    const tx = db.transaction('tweets', 'readwrite');
+    const tweets = tx.objectStore('tweets');
+    return tweets.put(s);
+  });
+}
+
+export function putTweets(ss: Status[]): Promise<string[]> {
+  return withDB(async (db) => {
+    const tx = db.transaction('tweets', 'readwrite');
+    const tweets = () => tx.objectStore('tweets');
+    const result = await Promise.all(ss.map((s) => tweets().put(s)));
+    await tx.done;
+    return result;
+  });
+}
+
+export function readTweet(id_str: string): Promise<Status | undefined> {
+  return withDB(async (db) => {
+    const tx = db.transaction('tweets');
+    const tweets = tx.objectStore('tweets');
+    return tweets.get(id_str);
+  });
+}
+
+export function readAllTweets(): Promise<Status[]> {
+  return withDB(async (db) => {
+    const tx = db.transaction('tweets');
+    const tweets = tx.objectStore('tweets');
+    const res = [];
+    let cursor = await tweets.openCursor(undefined, 'prev');
+    while (cursor) {
+      res.push(cursor.value);
+      cursor = await cursor.continue();
+    }
+    await tx.done;
+    return res;
+  });
+}
