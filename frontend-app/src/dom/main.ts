@@ -78,7 +78,7 @@ const reduce = (init: Model) => (model: Model | undefined, msg: Msg): Model => {
 
 const mountpoint = document.getElementById('react-mountpoint');
 
-const hist = createHashHistory();
+const hist = createHashHistory<never>();
 
 const init: Model = {
   core: core.init,

@@ -2,7 +2,7 @@ import * as history from 'history';
 
 import { typecheckNever } from './utils/utils';
 
-type MyLocationState = unknown;
+type MyLocationState = never;
 type Location = history.Location<MyLocationState>;
 
 export type Model = {
