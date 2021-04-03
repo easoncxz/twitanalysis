@@ -35,21 +35,24 @@ export const reduce = (init: Model) => (
   }
 };
 
-export type Effects = {
+export interface IEffects {
   push(path: string): Msg;
   go(n: number): Msg;
-};
+}
 
-export const effectsOf = (hist: history.History<MyLocationState>): Effects => ({
+export class Effects implements IEffects {
+  constructor(private readonly hist: history.History<MyLocationState>) {}
+
   push(url: string): Msg {
-    hist.push(url);
+    this.hist.push(url);
     return noop();
-  },
+  }
+
   go(n: number): Msg {
-    hist.go(n);
+    this.hist.go(n);
     return noop();
-  },
-});
+  }
+}
 
 export const listener = <T>(dispatch: (_: Msg) => T) => (
   location: history.Location<MyLocationState>,
