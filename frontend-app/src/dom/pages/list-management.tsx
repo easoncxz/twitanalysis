@@ -2,8 +2,8 @@ import React, { FC } from 'react';
 
 import * as twitter from '../twitter/models';
 import { t } from '../twitter/models';
-import * as e from '../effects';
 import { RemoteData } from '../utils/remote-data';
+import { fetchJson } from '../utils/utils';
 
 type MyDispatch<T> = (_: T) => void;
 
@@ -41,7 +41,7 @@ export class Effects {
   constructor(private readonly dispatch: MyDispatch<Msg>) {}
 
   fetchLists(): Msg {
-    e.fetchJson(t('lists/list') + '?reverse=true')
+    fetchJson(t('lists/list') + '?reverse=true')
       .then(twitter.parseArray(twitter.parseList))
       .then(
         (lists: twitter.List[]) => {

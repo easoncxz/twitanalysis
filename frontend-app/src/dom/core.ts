@@ -1,9 +1,11 @@
 import { User, Status } from './twitter/models';
 import { typecheckNever } from './utils/utils';
+import { RemoteData } from './utils/remote-data';
+import * as fetchMe from './pages/fetch-me';
 
 export type Model = {
   // Data
-  user?: User;
+  user: RemoteData<User, Error>;
   sentTweets: Status[];
   faves: Status[];
 
@@ -20,10 +22,7 @@ export type Model = {
 };
 
 export type Msg =
-  // fetchMe
-  | { type: 'start_fetch_me' }
-  | { type: 'receive_fetch_me'; user: User }
-  | { type: 'error_fetch_me'; error: Error }
+  | { type: 'fetch_me'; sub: fetchMe.Msg }
   // sendTweet
   | { type: 'start_send_tweet' }
   | { type: 'receive_send_tweet'; status: Status }
@@ -70,7 +69,7 @@ export type Msg =
 export const noop = (): Msg => ({ type: 'noop' });
 
 export const init: Model = {
-  user: undefined,
+  user: { type: 'idle' },
   sentTweets: [],
   faves: [],
   pendingTweet: '(initial)',
@@ -89,24 +88,11 @@ export const reduce = (init: Model) => (
     return init;
   }
   switch (msg.type) {
-    case 'start_fetch_me':
+    case 'fetch_me':
       return {
         ...model,
-        fetchingMe: true,
+        user: fetchMe.reduce(model.user, msg.sub),
       };
-    case 'receive_fetch_me':
-      return {
-        ...model,
-        user: msg.user,
-        fetchingMe: false,
-      };
-    case 'error_fetch_me': {
-      return {
-        ...model,
-        fetchingMe: false,
-        errors: model.errors.concat([msg.error]),
-      };
-    }
     case 'start_send_tweet':
       return {
         ...model,

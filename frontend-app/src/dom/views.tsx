@@ -64,14 +64,20 @@ function viewContent(props: Props): ReactFragment {
   switch (page) {
     case Page.Home:
       return <p>Please click through the nav menu!</p>;
-    case Page.FetchMe:
+    case Page.FetchMe: {
+      const dispatch = (sub: fetchMe.Msg) =>
+        props.dispatches.core({
+          type: 'fetch_me',
+          sub,
+        });
       return (
         <fetchMe.View
-          model={props.models.core}
-          dispatch={props.dispatches.core}
-          effects={props.effects}
+          model={props.models.core.user}
+          dispatch={dispatch}
+          effects={new fetchMe.Effects(dispatch)}
         />
       );
+    }
     case Page.FetchFaves:
       return (
         <fetchFaves.View

@@ -18,3 +18,20 @@ export function* stringEnumValues<T extends string>(enumObj: {
     yield enumObj[property];
   }
 }
+
+function guardOk(r: Response): Response {
+  if (!(200 <= r.status && r.status < 300)) {
+    throw new Error(`Request not ok: ${r.status}`);
+  } else {
+    return r;
+  }
+}
+
+export async function fetchJson(
+  url: string,
+  init?: RequestInit,
+): Promise<unknown> {
+  return fetch(url, init)
+    .then(guardOk)
+    .then((r) => r.json());
+}

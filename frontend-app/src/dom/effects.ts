@@ -2,31 +2,8 @@ import type { Dispatch } from 'redux';
 
 import * as core from './core';
 import * as tdb from './twitter/storage';
-import {
-  User,
-  Status,
-  t,
-  parseUser,
-  parseStatus,
-  parseArray,
-} from './twitter/models';
-
-function guardOk(r: Response): Response {
-  if (!(200 <= r.status && r.status < 300)) {
-    throw new Error(`Request not ok: ${r.status}`);
-  } else {
-    return r;
-  }
-}
-
-export async function fetchJson(
-  url: string,
-  init?: RequestInit,
-): Promise<unknown> {
-  return fetch(url, init)
-    .then(guardOk)
-    .then((r) => r.json());
-}
+import { User, Status, t, parseStatus, parseArray } from './twitter/models';
+import { fetchJson } from './utils/utils';
 
 export class Effects {
   constructor(private readonly dispatch: Dispatch<core.Msg>) {}
@@ -34,20 +11,6 @@ export class Effects {
   noop(): core.Msg {
     return {
       type: 'noop',
-    };
-  }
-
-  fetchMe(): core.Msg {
-    fetchJson(t('account/verify_credentials'))
-      .then(parseUser)
-      .then(
-        (user: User) => {
-          this.dispatch({ type: 'receive_fetch_me', user });
-        },
-        (e) => this.dispatch({ type: 'error_fetch_me', error: e }),
-      );
-    return {
-      type: 'start_fetch_me',
     };
   }
 
