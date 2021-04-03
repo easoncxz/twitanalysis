@@ -16,7 +16,6 @@ export type Model = {
   errors: Error[];
 
   // Network state
-  fetchingMe: boolean;
   fetchingFaves: boolean;
   sendingTweet: boolean;
 };
@@ -75,7 +74,6 @@ export const init: Model = {
   pendingTweet: '(initial)',
   faveNick: "(somebody's Twitter ID)",
   errors: [],
-  fetchingMe: false,
   fetchingFaves: false,
   sendingTweet: false,
 };
