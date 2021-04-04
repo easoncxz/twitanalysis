@@ -3,9 +3,10 @@ import React, { FC } from 'react';
 import * as twitter from '../twitter/models';
 import { t } from '../twitter/models';
 import { RemoteData } from '../utils/remote-data';
+import * as remoteData from '../utils/remote-data';
 import { fetchJson } from '../utils/utils';
 
-type MyDispatch<T> = (_: T) => void;
+type MyDispatch<T> = (_: T) => T;
 
 export type Model = {
   allLists: RemoteData<twitter.List[], Error>;
@@ -15,11 +16,10 @@ export const init: Model = {
   allLists: { type: 'idle' },
 };
 
-export type Msg =
-  // fetchLists
-  | { type: 'start_fetch_lists' }
-  | { type: 'receive_fetch_lists'; lists: twitter.List[] }
-  | { type: 'error_fetch_lists'; error: Error };
+export type Msg = {
+  type: 'fetch_lists';
+  update: RemoteData<twitter.List[], Error>;
+};
 
 export const reduce = (init: Model) => (
   model: Model | undefined,
@@ -29,10 +29,11 @@ export const reduce = (init: Model) => (
     return init;
   }
   switch (msg.type) {
-    case 'start_fetch_lists':
-    case 'receive_fetch_lists':
-    case 'error_fetch_lists': {
-      return model;
+    case 'fetch_lists': {
+      return {
+        ...model,
+        allLists: remoteData.reduce(model.allLists, msg.update),
+      };
     }
   }
 };
@@ -43,15 +44,22 @@ export class Effects {
   fetchLists(): Msg {
     fetchJson(t('lists/list') + '?reverse=true')
       .then(twitter.parseArray(twitter.parseList))
-      .then(
-        (lists: twitter.List[]) => {
-          this.dispatch({ type: 'receive_fetch_lists', lists });
-        },
-        (e) => {
-          this.dispatch({ type: 'error_fetch_lists', error: e });
-        },
-      );
-    return { type: 'start_fetch_lists' };
+      .then((lists: twitter.List[]) => {
+        this.dispatch({
+          type: 'fetch_lists',
+          update: { type: 'ok', data: lists },
+        });
+      })
+      .catch((e) => {
+        this.dispatch({
+          type: 'fetch_lists',
+          update: { type: 'error', error: e },
+        });
+      });
+    return {
+      type: 'fetch_lists',
+      update: { type: 'loading' },
+    };
   }
 }
 
@@ -60,9 +68,7 @@ export type Props = {
   dispatch: MyDispatch<Msg>;
 };
 
-type Com<T = {}> = FC<{ props: Props } & T>;
-
-export const ListManagement: Com = ({ props: { dispatch } }) => {
+export const ListManagement: FC<Props> = ({ dispatch }) => {
   const effects = new Effects(dispatch);
   const ListPicker = () => (
     <div className="list-picker">

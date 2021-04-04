@@ -122,11 +122,6 @@ export const splitDispatch = (dispatch: MyDispatch<Msg>): Dispatches => ({
   },
 });
 
-type Props = {
-  models: Model;
-  dispatches: Dispatches;
-};
-
 function viewUnknown(): ReactElement {
   return (
     <p>
@@ -146,7 +141,7 @@ export enum Page {
 }
 
 export function parseLocation(
-  location: history.Location<unknown>,
+  location: history.Location<router.MyLocationState>,
 ): Page | undefined {
   for (const page of stringEnumValues(Page)) {
     if (location.pathname === page) {
@@ -156,54 +151,43 @@ export function parseLocation(
   return undefined;
 }
 
-function viewContent(props: Props): ReactFragment {
-  const { location } = props.models.router;
+function viewContent(model: Model, dispatches: Dispatches): ReactFragment {
+  const { location } = model.router;
   const page = parseLocation(location);
   switch (page) {
     case Page.Home:
       return <p>Please click through the nav menu!</p>;
     case Page.FetchMe: {
-      const dispatch = (sub: fetchMe.Msg) =>
-        props.dispatches.core({
-          type: 'fetch_me',
-          sub,
-        });
       return (
-        <fetchMe.View
-          model={props.models.core.user}
-          dispatch={dispatch}
-          effects={new fetchMe.Effects(dispatch)}
-        />
+        <fetchMe.View model={model.core.user} dispatch={dispatches.core} />
       );
     }
     case Page.FetchFaves:
       return (
         <fetchFaves.View
-          user={props.models.core.user}
-          model={props.models.fetchFaves}
-          dispatch={props.dispatches.fetchFaves}
+          user={model.core.user}
+          model={model.fetchFaves}
+          dispatch={dispatches.fetchFaves}
         />
       );
     case Page.SendTweet:
       return (
-        <>
-          {sendTweet.View({
-            model: props.models.sendTweet,
-            dispatch: props.dispatches.sendTweet,
-          })}
-        </>
+        <sendTweet.View
+          model={model.sendTweet}
+          dispatch={dispatches.sendTweet}
+        />
       );
     case Page.IndexDBFiddle:
       return <idbF.View />;
     case Page.ServiceWorkerManagement:
       return serviceWorkerManagement.view();
     case Page.ListManagement: {
-      const smallProps: listManagement.Props = {
-        model: props.models.listManagement,
-        dispatch: (inner: listManagement.Msg) =>
-          props.dispatches.listManagement(inner),
-      };
-      return <ListManagement props={smallProps} />;
+      return (
+        <ListManagement
+          model={model.listManagement}
+          dispatch={dispatches.listManagement}
+        />
+      );
     }
     case undefined:
       return viewUnknown();
@@ -233,7 +217,6 @@ const NavLinks: FC = () => {
 
 export function view(model: Model, dispatch: MyDispatch<Msg>): ReactElement {
   const dispatches = splitDispatch(dispatch);
-  const props = { models: model, dispatches };
   return (
     <div id="react-main-view">
       <h1>Welcome to TwitAnalysis</h1>
@@ -253,7 +236,7 @@ export function view(model: Model, dispatch: MyDispatch<Msg>): ReactElement {
         ))}
       </div>
       <hr />
-      {viewContent(props)}
+      {viewContent(model, dispatches)}
     </div>
   );
 }

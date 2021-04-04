@@ -2,7 +2,6 @@ import { User } from './twitter/models';
 import { typecheckNever } from './utils/utils';
 import { RemoteData } from './utils/remote-data';
 import * as remoteData from './utils/remote-data';
-import * as fetchMe from './pages/fetch-me';
 
 export type Model = {
   user: RemoteData<User, Error>;
@@ -15,7 +14,7 @@ export const init: Model = {
 };
 
 export type Msg =
-  | { type: 'fetch_me'; sub: fetchMe.Msg }
+  | { type: 'fetch_me'; sub: RemoteData<User, Error> }
   | { type: 'add_error'; error: Error }
   | { type: 'remove_error'; error: Error }
   | { type: 'noop' };
