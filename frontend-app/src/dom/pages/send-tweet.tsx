@@ -1,13 +1,84 @@
 import React from 'react';
 
-import * as core from '../core';
-import * as effects from '../effects';
+import { t } from '../twitter/models';
+import * as twitter from '../twitter/models';
+import { RemoteData } from '../utils/remote-data';
+import { fetchJson, typecheckNever } from '../utils/utils';
+import * as remoteData from '../utils/remote-data';
+
+export type Model = {
+  sentTweets: twitter.Status[];
+  pendingTweet: string;
+  sendTweet: RemoteData<twitter.Status, Error>;
+};
+
+export const init: Model = {
+  sentTweets: [],
+  pendingTweet: '(initial)',
+  sendTweet: { type: 'idle' },
+};
+
+export type Msg =
+  | { type: 'network'; update: RemoteData<twitter.Status, Error> }
+  | { type: 'update_pending_tweet'; text: string };
+
+export const reduce = (init: Model) => (
+  model: Model | undefined,
+  msg: Msg,
+): Model => {
+  if (model === undefined) {
+    return init;
+  }
+  switch (msg.type) {
+    case 'network':
+      return {
+        ...model,
+        sendTweet: remoteData.reduce(model.sendTweet, msg.update),
+      };
+    case 'update_pending_tweet':
+      return {
+        ...model,
+        pendingTweet: msg.text,
+      };
+    default:
+      typecheckNever(msg);
+      return model;
+  }
+};
+
+class Effects {
+  constructor(private readonly dispatch: (_: Msg) => void) {}
+
+  sendTweet(text: string): Msg {
+    const body = new URLSearchParams();
+    body.set('status', text);
+    fetchJson(t('statuses/update'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    })
+      .then(twitter.parseStatus)
+      .then(
+        (data: twitter.Status) => {
+          this.dispatch({ type: 'network', update: { type: 'ok', data } });
+        },
+        (e) =>
+          this.dispatch({
+            type: 'network',
+            update: { type: 'error', error: e },
+          }),
+      );
+    return { type: 'network', update: { type: 'loading' } };
+  }
+}
 
 export const View: React.FC<{
-  model: core.Model;
-  dispatch: (_: core.Msg) => void;
-  effects: effects.Effects;
-}> = ({ model, dispatch, effects }) => {
+  model: Model;
+  dispatch: (_: Msg) => void;
+}> = ({ model, dispatch }) => {
+  const effects = new Effects(dispatch);
   return (
     <div>
       <h2>Send tweet</h2>
@@ -20,7 +91,7 @@ export const View: React.FC<{
               text: e.target.value,
             });
           }}
-          disabled={model.sendingTweet}
+          disabled={model.sendTweet.type === 'loading'}
         ></textarea>
         <br />
         <pre>{model.pendingTweet}</pre>
@@ -30,7 +101,7 @@ export const View: React.FC<{
             e.preventDefault();
             dispatch(effects.sendTweet(model.pendingTweet));
           }}
-          disabled={model.sendingTweet}
+          disabled={model.sendTweet.type === 'loading'}
           value="Send this tweet"
         />
       </form>

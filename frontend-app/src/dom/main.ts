@@ -8,8 +8,8 @@ import * as core from './core';
 import * as router from './router';
 import * as listManagement from './pages/list-management';
 import * as fetchFaves from './pages/fetch-faves';
+import * as sendTweet from './pages/send-tweet';
 import { view } from './views';
-import { Effects } from './effects';
 import { typecheckNever } from './utils/utils';
 
 type Model = {
@@ -17,19 +17,22 @@ type Model = {
   router: router.Model;
   listManagement: listManagement.Model;
   fetchFaves: fetchFaves.Model;
+  sendTweet: sendTweet.Model;
 };
 
 type Msg =
   | { type: 'core'; sub: core.Msg }
   | { type: 'router'; sub: router.Msg }
   | { type: 'list_management'; sub: listManagement.Msg }
-  | { type: 'fetch_faves'; sub: fetchFaves.Msg };
+  | { type: 'fetch_faves'; sub: fetchFaves.Msg }
+  | { type: 'send_tweet'; sub: sendTweet.Msg };
 
 type Dispatches = {
   core: Redux.Dispatch<core.Msg>;
   router: Redux.Dispatch<router.Msg>;
   listManagement: Redux.Dispatch<listManagement.Msg>;
   fetchFaves: Redux.Dispatch<fetchFaves.Msg>;
+  sendTweet: Redux.Dispatch<sendTweet.Msg>;
 };
 
 const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
@@ -51,6 +54,10 @@ const splitDispatch = (dispatch: Redux.Dispatch<Msg>): Dispatches => ({
   },
   fetchFaves(sub) {
     dispatch({ type: 'fetch_faves', sub });
+    return sub;
+  },
+  sendTweet(sub) {
+    dispatch({ type: 'send_tweet', sub });
     return sub;
   },
 });
@@ -86,6 +93,11 @@ const reduce = (init: Model) => (model: Model | undefined, msg: Msg): Model => {
           msg.sub,
         ),
       };
+    case 'send_tweet':
+      return {
+        ...model,
+        sendTweet: sendTweet.reduce(sendTweet.init)(model.sendTweet, msg.sub),
+      };
     default:
       typecheckNever(msg);
       return model;
@@ -101,13 +113,12 @@ const init: Model = {
   router: { location: hist.location },
   listManagement: listManagement.init,
   fetchFaves: fetchFaves.init,
+  sendTweet: sendTweet.init,
 };
 
 const store: Redux.Store<Model, Msg> = Redux.createStore(reduce(init));
 
 const dispatches = splitDispatch(store.dispatch);
-
-const coreEffects = new Effects(dispatches.core);
 
 const render = () => {
   console.log(`About to call ReactDOM.render...`);
@@ -115,7 +126,6 @@ const render = () => {
     view({
       models: store.getState(),
       dispatches,
-      effects: coreEffects,
     }),
     mountpoint,
     () => {
@@ -143,7 +153,6 @@ if (typeof window === 'object') {
     get state() {
       return store.getState();
     },
-    effects: coreEffects,
   };
   window.addEventListener('load', bootstrap);
 }

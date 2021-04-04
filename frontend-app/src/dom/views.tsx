@@ -2,7 +2,6 @@ import React, { ReactElement, ReactFragment, FC } from 'react';
 import type * as history from 'history';
 
 import * as core from './core';
-import * as effects from './effects';
 import * as fetchFaves from './pages/fetch-faves';
 import * as fetchMe from './pages/fetch-me';
 import * as idbF from './pages/idb-fiddle';
@@ -21,14 +20,15 @@ type Props = {
     listManagement: listManagement.Model;
     router: router.Model;
     fetchFaves: fetchFaves.Model;
+    sendTweet: sendTweet.Model;
   };
   dispatches: {
     core: MyDispatch<core.Msg>;
     listManagement: MyDispatch<listManagement.Msg>;
     router: MyDispatch<router.Msg>;
     fetchFaves: MyDispatch<fetchFaves.Msg>;
+    sendTweet: MyDispatch<sendTweet.Msg>;
   };
-  effects: effects.Effects;
 };
 
 function viewUnknown(): ReactElement {
@@ -92,9 +92,8 @@ function viewContent(props: Props): ReactFragment {
       return (
         <>
           {sendTweet.View({
-            model: props.models.core,
-            dispatch: props.dispatches.core,
-            effects: props.effects,
+            model: props.models.sendTweet,
+            dispatch: props.dispatches.sendTweet,
           })}
         </>
       );
