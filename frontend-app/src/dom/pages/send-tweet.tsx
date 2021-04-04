@@ -31,10 +31,22 @@ export const reduce = (init: Model) => (
   }
   switch (msg.type) {
     case 'network':
-      return {
-        ...model,
-        sendTweet: remoteData.reduce(model.sendTweet, msg.update),
-      };
+      switch (msg.update.type) {
+        // special-case: not just do RemoteData, but also append it to our list
+        case 'ok': {
+          const status = msg.update.data;
+          return {
+            ...model,
+            sendTweet: { type: 'ok', data: status },
+            sentTweets: model.sentTweets.concat([status]),
+          };
+        }
+        default:
+          return {
+            ...model,
+            sendTweet: remoteData.reduce(model.sendTweet, msg.update),
+          };
+      }
     case 'update_pending_tweet':
       return {
         ...model,
