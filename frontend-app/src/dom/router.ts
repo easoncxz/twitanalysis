@@ -2,18 +2,21 @@ import * as history from 'history';
 
 import { typecheckNever } from './utils/utils';
 
-type MyLocationState = never;
-type Location = history.Location<MyLocationState>;
+type MyDispatch<T> = (_: T) => T;
+export type MyLocationState = never;
+export type Location = history.Location<MyLocationState>;
 
 export type Model = {
   location: Location;
 };
 
+export const init = (location: Location): Model => {
+  return { location };
+};
+
 export type Msg =
   | { type: 'update_location'; location: Location }
   | { type: 'noop' };
-
-export const noop = (): Msg => ({ type: 'noop' });
 
 export const reduce = (init: Model) => (
   model: Model | undefined,
@@ -35,6 +38,8 @@ export const reduce = (init: Model) => (
   }
 };
 
+export const noop = (): Msg => ({ type: 'noop' });
+
 export interface IEffects {
   push(path: string): Msg;
   go(n: number): Msg;
@@ -54,9 +59,9 @@ export class Effects implements IEffects {
   }
 }
 
-export const listener = <T>(dispatch: (_: Msg) => T) => (
+export const listener = (dispatch: MyDispatch<Msg>) => (
   location: history.Location<MyLocationState>,
   _action: string,
-): T => {
+): Msg => {
   return dispatch({ type: 'update_location', location });
 };

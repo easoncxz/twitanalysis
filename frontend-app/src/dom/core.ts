@@ -9,18 +9,16 @@ export type Model = {
   errors: Error[];
 };
 
-export type Msg =
-  | { type: 'fetch_me'; sub: fetchMe.Msg }
-  | { type: 'add_error'; error: Error }
-  | { type: 'clear_error'; error: Error }
-  | { type: 'noop' };
-
-export const noop = (): Msg => ({ type: 'noop' });
-
 export const init: Model = {
   user: { type: 'idle' },
   errors: [],
 };
+
+export type Msg =
+  | { type: 'fetch_me'; sub: fetchMe.Msg }
+  | { type: 'add_error'; error: Error }
+  | { type: 'remove_error'; error: Error }
+  | { type: 'noop' };
 
 export const reduce = (init: Model) => (
   model: Model | undefined,
@@ -41,7 +39,7 @@ export const reduce = (init: Model) => (
         errors: model.errors.concat([msg.error]),
       };
     }
-    case 'clear_error': {
+    case 'remove_error': {
       return {
         ...model,
         errors: model.errors.filter((e) => e !== msg.error),
@@ -50,10 +48,6 @@ export const reduce = (init: Model) => (
     case 'noop':
       return model;
     default:
-      // Can't just use an ordinary `(n: never) => never` function,
-      // because Redux actually abuse our reducer function to run
-      // their internal actions. We must return the model despite
-      // semantically it's more sensible to throw an error.
       typecheckNever(msg);
       return model;
   }
