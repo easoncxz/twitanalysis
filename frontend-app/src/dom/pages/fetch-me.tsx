@@ -61,7 +61,7 @@ export const View: React.FC<{
               return (
                 <div>
                   <p>You are:</p>
-                  <pre>{pretty(model)}</pre>
+                  <pre>{pretty(model.data)}</pre>
                 </div>
               );
             case 'error':
