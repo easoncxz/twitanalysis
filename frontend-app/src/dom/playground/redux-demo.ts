@@ -1,6 +1,6 @@
 import * as Redux from 'redux';
 
-import * as utils from './utils/utils';
+import { typecheckNever } from '../utils/utils';
 
 /**
  * The point of this demo is to show what happens first:
@@ -46,7 +46,7 @@ const reducer = (init: Model) => (
         count: model.count + 1,
       };
     default:
-      return utils.typecheckNever(msg);
+      return typecheckNever(msg);
   }
 };
 
