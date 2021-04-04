@@ -4,7 +4,7 @@ import * as Redux from 'redux';
 import ReactDOM from 'react-dom';
 import { createHashHistory, UnregisterCallback } from 'history';
 
-import { Model, Msg, reduce, init, view, splitDispatch } from './views';
+import { Model, Msg, reduce, init, view, splitDispatch } from './app';
 import * as router from './router';
 
 const hist = createHashHistory<router.MyLocationState>();
