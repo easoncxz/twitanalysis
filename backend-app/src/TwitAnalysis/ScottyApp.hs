@@ -35,6 +35,7 @@ scottyApp Env { envAuthEnv
        envAuthEnv
        envRecaptchaEnv
        envHomePagePath)
+  Scotty.get "/logout" (LoginFlow.handleLogout envLoginEnv envHomePagePath)
   Scotty.get
     (s envOAuthCallbackPath)
     (LoginFlow.handleOAuthCallback envLoginEnv envAuthEnv envHomePagePath)

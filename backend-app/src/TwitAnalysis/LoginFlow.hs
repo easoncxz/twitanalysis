@@ -9,6 +9,7 @@ module TwitAnalysis.LoginFlow
   , newEnv
   , handleOAuthCallback
   , handleLogin
+  , handleLogout
   , viewHome
   , sessionAccessToken
   , sessionAccessCred
@@ -88,6 +89,11 @@ handleLogin UnsafeEnv {envSessionMan} authEnv recaptchaEnv homePagePath = do
       -- user appears already logged-in
      -> do
       Scotty.redirect (fromString homePagePath)
+
+handleLogout :: Env -> String -> Scotty.ActionM ()
+handleLogout UnsafeEnv {envSessionMan} homePagePath = do
+  Session.modifySession envSessionMan (const Nothing)
+  Scotty.redirect (fromString homePagePath)
 
 handleOAuthCallback :: Env -> Auth.Env -> String -> ActionM ()
 handleOAuthCallback UnsafeEnv {envSessionMan} authEnv homePagePath = do
