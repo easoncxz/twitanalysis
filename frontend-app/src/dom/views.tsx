@@ -101,7 +101,7 @@ function viewContent(props: Props): ReactFragment {
     case Page.IndexDBFiddle:
       return <idbF.View />;
     case Page.ServiceWorkerManagement:
-      return serviceWorkerManagement.view(props.dispatches.core, props.effects);
+      return serviceWorkerManagement.view();
     case Page.ListManagement: {
       const smallProps: listManagement.Props = {
         model: props.models.listManagement,
