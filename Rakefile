@@ -159,11 +159,6 @@ task dev: [:install_backend_tools, :install_frontend_tools, :build_frontend] do
       die 'yarn watch'
     end
   end
-  sslWatch = Process.fork do
-    Dir.chdir 'frontend-app' do
-      die 'yarn ssl'
-    end
-  end
   backend = Process.fork do
     Dir.chdir 'backend-app' do
       die 'stack run'

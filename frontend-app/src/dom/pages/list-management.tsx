@@ -42,7 +42,7 @@ export const reduce = (init: Model) => (
 export class Effects {
   constructor(private readonly dispatch: MyDispatch<Msg>) {}
 
-  fetchLists(): Msg {
+  loadListsFromIdb(): Msg {
     tdb
       .readLists()
       .then((lists: twitter.List[]) => {
@@ -58,6 +58,18 @@ export class Effects {
           update: { type: 'error', error: e },
         });
       });
+    return {
+      type: 'fetch_lists',
+      update: { type: 'loading' },
+    };
+  }
+
+  fetchListsFromNetwork(opts: {
+    silenceNetwork?: boolean;
+    silenceIdb?: boolean;
+  }): Msg {
+    const silenceNetwork = opts.silenceNetwork ?? false;
+    const silenceIdb = opts.silenceIdb ?? false;
     fetchJson(t('lists/list') + '?reverse=true')
       .then(twitter.parseArray(twitter.parseList))
       .then(
@@ -70,18 +82,22 @@ export class Effects {
         },
         (e) => {
           console.error(`fetchJson failed when loading lists: ${e.message}`);
-          this.dispatch({
-            type: 'fetch_lists',
-            update: { type: 'error', error: e },
-          });
+          if (!silenceNetwork) {
+            this.dispatch({
+              type: 'fetch_lists',
+              update: { type: 'error', error: e },
+            });
+          }
         },
       )
       .catch((e) => {
         console.error(`tdb.storeLists failed: ${e.message}`, e);
-        this.dispatch({
-          type: 'fetch_lists',
-          update: { type: 'error', error: e },
-        });
+        if (!silenceIdb) {
+          this.dispatch({
+            type: 'fetch_lists',
+            update: { type: 'error', error: e },
+          });
+        }
       });
     return {
       type: 'fetch_lists',
@@ -90,57 +106,68 @@ export class Effects {
   }
 }
 
+export const initEffect = (effects: Effects): Msg => {
+  console.log(new Date(), ' - Running ListManagement initial effect');
+  effects.fetchListsFromNetwork({ silenceNetwork: true });
+  return effects.loadListsFromIdb();
+};
+
 export type Props = {
   model: Model;
   dispatch: MyDispatch<Msg>;
 };
 
-const ListPicker: FC<Props & { effects: Effects }> = ({
-  model,
-  dispatch,
-  effects,
-}) => (
-  <div className="list-picker">
-    {(() => {
-      switch (model.allLists.type) {
-        case 'idle':
-          return (
-            <div className="select">{`Click "refresh" to load lists.`}</div>
-          );
-        case 'loading':
-          return <div className="select">Loading...</div>;
-        case 'ok':
-          return (
-            <select>
-              {model.allLists.data.map((l: twitter.List) => (
-                <option key={l.id_str} value={l.slug}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-          );
-        case 'error':
-          return (
-            <div className="select">
-              An error occurred.
-              <code>{JSON.stringify(model.allLists.error, undefined, 4)}</code>
-            </div>
-          );
-        default:
-          return typecheckNever(model.allLists);
-      }
-    })()}
-    {(model.allLists.type === 'idle' || model.allLists.type === 'error') && (
-      <button type="button" onClick={() => dispatch(effects.fetchLists())}>
-        refresh
-      </button>
-    )}
-  </div>
-);
-
-export const ListManagement: FC<Props> = ({ model, dispatch }) => {
+const ListPicker: FC<Props> = ({ model, dispatch }) => {
   const effects = new Effects(dispatch);
-  const props = { model, dispatch, effects };
+  return (
+    <div className="list-picker">
+      {(() => {
+        switch (model.allLists.type) {
+          case 'idle':
+            return (
+              <div className="select">{`Click "refresh" to load lists.`}</div>
+            );
+          case 'loading':
+            return <div className="select">Loading...</div>;
+          case 'ok':
+            return (
+              <select>
+                {model.allLists.data.map((l: twitter.List) => (
+                  <option key={l.id_str} value={l.slug}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            );
+          case 'error':
+            return (
+              <div className="select">
+                An error occurred.
+                <code>
+                  {JSON.stringify(model.allLists.error, undefined, 4)}
+                </code>
+              </div>
+            );
+          default:
+            return typecheckNever(model.allLists);
+        }
+      })()}
+      {(model.allLists.type === 'idle' || model.allLists.type === 'error') && (
+        <button
+          type="button"
+          onClick={() => {
+            effects.fetchListsFromNetwork({ silenceNetwork: true });
+            dispatch(effects.loadListsFromIdb());
+          }}
+        >
+          refresh
+        </button>
+      )}
+    </div>
+  );
+};
+
+export const ListManagement: FC<Props> = (props) => {
   return (
     <div className="page list-management">
       <p>Manage your Twitter lists</p>
