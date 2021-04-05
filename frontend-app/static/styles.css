@@ -60,6 +60,10 @@ nav > .nav-item:visited {
   flex-grow: 1;
 }
 
+.page.list-management .sidescroll .list-picker > div.select {
+  flex-grow: 1;
+}
+
 .page.list-management .sidescroll .list-picker > button {
   flex-grow: 0;
 }

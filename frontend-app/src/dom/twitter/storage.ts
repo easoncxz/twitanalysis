@@ -143,8 +143,8 @@ export function readAllTweets(): Promise<twitter.Status[]> {
 
 export function storeLists(ls: twitter.List[]): Promise<string[]> {
   return withDB(async (db) => {
-    const tx = db.transaction('lists');
-    const lists = tx.objectStore('lists');
+    const tx = db.transaction('lists', 'readwrite');
+    const lists = tx.store;
     const result = await Promise.all(ls.map((l) => lists.put(l)));
     await tx.done;
     return result;

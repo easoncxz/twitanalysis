@@ -89,5 +89,5 @@ export async function parseList(j: unknown): Promise<List> {
  * Shorthand to connect to the OAuth pass-thru endpoint on the Haskell side
  */
 export function t(rel: string): string {
-  return '/to-twitter/' + rel + '.json';
+  return `/to-twitter/${rel}.json`;
 }
