@@ -2,9 +2,12 @@ import React, { FC } from 'react';
 
 import * as twitter from '../twitter/models';
 import { t } from '../twitter/models';
+import * as tdb from '../twitter/storage';
 import { RemoteData } from '../utils/remote-data';
 import * as remoteData from '../utils/remote-data';
 import { fetchJson } from '../utils/utils';
+
+void tdb;
 
 type MyDispatch<T> = (_: T) => T;
 

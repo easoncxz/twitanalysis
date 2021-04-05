@@ -1,49 +1,64 @@
 import { openDB, deleteDB } from 'idb';
 import type { IDBPDatabase, IDBPTransaction, DBSchema } from 'idb';
 
-import { User, Status } from './models';
+import * as twitter from './models';
 
 interface TwitDb extends DBSchema {
   tweets: {
     key: string;
-    value: Status;
+    value: twitter.Status;
   };
   users: {
     key: string;
-    value: User;
+    value: twitter.User;
+  };
+  lists: {
+    key: string;
+    value: twitter.List;
   };
 }
 
 const dbName = 'twitanalysis-idb';
-const dbVersion = 1;
+const currentVersion = 2;
 
 export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
-  const db: IDBPDatabase<TwitDb> = await openDB<TwitDb>(dbName, dbVersion, {
-    blocked() {
-      console.log('openDB Blocked');
+  const db: IDBPDatabase<TwitDb> = await openDB<TwitDb>(
+    dbName,
+    currentVersion,
+    {
+      blocked() {
+        console.log('openDB Blocked');
+      },
+      terminated() {
+        console.log("We're sad to see you go.");
+      },
+      blocking() {
+        console.log("Sorry, just a moment and we'll head off");
+      },
+      upgrade(
+        db: IDBPDatabase<TwitDb>,
+        oldVersion: number,
+        _newVersion: number,
+        tx: IDBPTransaction<TwitDb>,
+      ) {
+        if (oldVersion < 1) {
+          console.log('Inside openDB.upgrade');
+          db.createObjectStore('tweets', {
+            keyPath: 'id_str',
+          });
+          db.createObjectStore('users', {
+            keyPath: 'id_str',
+          });
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore('lists', {
+            keyPath: 'id_str',
+          });
+        }
+        return tx.done;
+      },
     },
-    terminated() {
-      console.log("We're sad to see you go.");
-    },
-    blocking() {
-      console.log("Sorry, just a moment and we'll head off");
-    },
-    upgrade(
-      db: IDBPDatabase<TwitDb>,
-      _oldVersion: number,
-      _newVersion: number,
-      tx: IDBPTransaction<TwitDb>,
-    ) {
-      console.log('Inside openDB.upgrade');
-      db.createObjectStore('tweets', {
-        keyPath: 'id_str',
-      });
-      db.createObjectStore('users', {
-        keyPath: 'id_str',
-      });
-      return tx.done;
-    },
-  });
+  );
   return db;
 }
 
@@ -65,7 +80,7 @@ export async function withDB<T>(
 // a bunch of single-transaction actions follows
 // ------
 
-export function saveUser(user: User): Promise<void> {
+export function saveUser(user: twitter.User): Promise<void> {
   return withDB(async (db) => {
     const tx = db.transaction('users', 'readwrite');
     const users = tx.objectStore('users');
@@ -74,7 +89,7 @@ export function saveUser(user: User): Promise<void> {
   });
 }
 
-export function readUser(id_str: string): Promise<User | undefined> {
+export function readUser(id_str: string): Promise<twitter.User | undefined> {
   return withDB(async (db) => {
     const tx = db.transaction('users');
     const users = tx.store;
@@ -85,7 +100,7 @@ export function readUser(id_str: string): Promise<User | undefined> {
 /**
  * Seems to return stored Status ID
  */
-export function putTweet(s: Status): Promise<string> {
+export function putTweet(s: twitter.Status): Promise<string> {
   return withDB(async (db) => {
     const tx = db.transaction('tweets', 'readwrite');
     const tweets = tx.objectStore('tweets');
@@ -93,7 +108,7 @@ export function putTweet(s: Status): Promise<string> {
   });
 }
 
-export function putTweets(ss: Status[]): Promise<string[]> {
+export function putTweets(ss: twitter.Status[]): Promise<string[]> {
   return withDB(async (db) => {
     const tx = db.transaction('tweets', 'readwrite');
     const tweets = () => tx.objectStore('tweets');
@@ -103,7 +118,7 @@ export function putTweets(ss: Status[]): Promise<string[]> {
   });
 }
 
-export function readTweet(id_str: string): Promise<Status | undefined> {
+export function readTweet(id_str: string): Promise<twitter.Status | undefined> {
   return withDB(async (db) => {
     const tx = db.transaction('tweets');
     const tweets = tx.objectStore('tweets');
@@ -111,7 +126,7 @@ export function readTweet(id_str: string): Promise<Status | undefined> {
   });
 }
 
-export function readAllTweets(): Promise<Status[]> {
+export function readAllTweets(): Promise<twitter.Status[]> {
   return withDB(async (db) => {
     const tx = db.transaction('tweets');
     const tweets = tx.objectStore('tweets');
@@ -123,5 +138,23 @@ export function readAllTweets(): Promise<Status[]> {
     }
     await tx.done;
     return res;
+  });
+}
+
+export function storeLists(ls: twitter.List[]): Promise<string[]> {
+  return withDB(async (db) => {
+    const tx = db.transaction('lists');
+    const lists = tx.objectStore('lists');
+    const result = await Promise.all(ls.map((l) => lists.put(l)));
+    await tx.done;
+    return result;
+  });
+}
+
+export function readLists(): Promise<twitter.List[]> {
+  return withDB(async (db) => {
+    const tx = db.transaction('lists');
+    const lists = tx.store;
+    return lists.getAll();
   });
 }
