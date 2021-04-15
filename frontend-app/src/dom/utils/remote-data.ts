@@ -27,3 +27,33 @@ export function reduce<T, E>(
       return model;
   }
 }
+
+export function toMaybeDefined<T, E>(d: RemoteData<T, E>): T | undefined {
+  switch (d.type) {
+    case 'idle':
+    case 'loading':
+    case 'error':
+      return undefined;
+    case 'ok':
+      return d.data;
+    default:
+      typecheckNever(d);
+      return undefined;
+  }
+}
+
+export const map = <A, B, E>(f: (_: A) => B) => (
+  d: RemoteData<A, E>,
+): RemoteData<B, E> => {
+  switch (d.type) {
+    case 'idle':
+    case 'loading':
+    case 'error':
+      return d;
+    case 'ok':
+      return { type: 'ok', data: f(d.data) };
+    default:
+      typecheckNever(d);
+      return d;
+  }
+};

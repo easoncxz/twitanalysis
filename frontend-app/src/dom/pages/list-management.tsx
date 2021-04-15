@@ -5,22 +5,29 @@ import { t } from '../twitter/models';
 import * as tdb from '../twitter/storage';
 import { RemoteData } from '../utils/remote-data';
 import * as remoteData from '../utils/remote-data';
-import { fetchJson, typecheckNever } from '../utils/utils';
+import { fetchJson, typecheckNever, MaybeDefined } from '../utils/utils';
 
 type MyDispatch<T> = (_: T) => T;
 
 export type Model = {
   allLists: RemoteData<twitter.List[], Error>;
+  focusedList: MaybeDefined<twitter.List>;
 };
 
 export const init: Model = {
   allLists: { type: 'idle' },
+  focusedList: undefined,
 };
 
-export type Msg = {
-  type: 'fetch_lists';
-  update: RemoteData<twitter.List[], Error>;
-};
+export type Msg =
+  | {
+      type: 'focus_list';
+      focusIdStr: string;
+    }
+  | {
+      type: 'fetch_lists';
+      update: RemoteData<twitter.List[], Error>;
+    };
 
 export const reduce = (init: Model) => (
   model: Model | undefined,
@@ -31,11 +38,30 @@ export const reduce = (init: Model) => (
   }
   switch (msg.type) {
     case 'fetch_lists': {
+      const focusedList = remoteData.toMaybeDefined(msg.update)?.[0];
+      console.log(`Focusing on list: ${focusedList?.name}`);
       return {
         ...model,
         allLists: remoteData.reduce(model.allLists, msg.update),
+        focusedList,
       };
     }
+    case 'focus_list': {
+      const focusedList = remoteData.toMaybeDefined(
+        remoteData.map(
+          (ls: twitter.List[]) =>
+            ls.filter((l) => l.id_str === msg.focusIdStr)[0],
+        )(model.allLists),
+      );
+      console.log(`Focusing on list: ${focusedList?.name}`);
+      return {
+        ...model,
+        focusedList,
+      };
+    }
+    default:
+      typecheckNever(msg);
+      return model;
   }
 };
 
@@ -106,12 +132,6 @@ export class Effects {
   }
 }
 
-export const initEffect = (effects: Effects): Msg => {
-  console.log(new Date(), ' - Running ListManagement initial effect');
-  effects.fetchListsFromNetwork({ silenceNetwork: true });
-  return effects.loadListsFromIdb();
-};
-
 export type Props = {
   model: Model;
   dispatch: MyDispatch<Msg>;
@@ -131,9 +151,14 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
             return <div className="select">Loading...</div>;
           case 'ok':
             return (
-              <select>
+              <select
+                value={model.focusedList?.id_str}
+                onChange={(e) => {
+                  dispatch({ type: 'focus_list', focusIdStr: e.target.value });
+                }}
+              >
                 {model.allLists.data.map((l: twitter.List) => (
-                  <option key={l.id_str} value={l.slug}>
+                  <option key={l.id_str} value={l.id_str}>
                     {l.name}
                   </option>
                 ))}
