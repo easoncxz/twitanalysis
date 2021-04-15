@@ -16,10 +16,17 @@ interface TwitDb extends DBSchema {
     key: string;
     value: twitter.List;
   };
+  listMemberships: {
+    key: number; // auto-increment
+    value: twitter.ListMembership[];
+    indexes: {
+      'by-list': string;
+    };
+  };
 }
 
 const dbName = 'twitanalysis-idb';
-const currentVersion = 2;
+const currentVersion = 3;
 
 export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
   const db: IDBPDatabase<TwitDb> = await openDB<TwitDb>(
@@ -53,6 +60,14 @@ export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
         if (oldVersion < 2) {
           db.createObjectStore('lists', {
             keyPath: 'id_str',
+          });
+        }
+        if (oldVersion < 3) {
+          const listMemberships = db.createObjectStore('listMemberships', {
+            autoIncrement: true,
+          });
+          listMemberships.createIndex('by-list', 'id', {
+            unique: false,
           });
         }
         return tx.done;

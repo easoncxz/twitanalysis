@@ -91,3 +91,8 @@ export async function parseList(j: unknown): Promise<List> {
 export function t(rel: string): string {
   return `/to-twitter/${rel}.json`;
 }
+
+export type ListMembership = {
+  listIdStr: string;
+  userIdStr: string;
+};
