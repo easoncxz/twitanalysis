@@ -18,7 +18,7 @@ interface TwitDb extends DBSchema {
   };
   listMemberships: {
     key: number; // auto-increment
-    value: twitter.ListMembership[];
+    value: twitter.ListMembership;
     indexes: {
       'by-list': string;
     };
@@ -66,7 +66,8 @@ export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
           const listMemberships = db.createObjectStore('listMemberships', {
             autoIncrement: true,
           });
-          listMemberships.createIndex('by-list', 'id', {
+          // TODO: what to use as index keyPath?
+          listMemberships.createIndex('by-list', [], {
             unique: false,
           });
         }
@@ -171,5 +172,22 @@ export function readLists(): Promise<twitter.List[]> {
     const tx = db.transaction('lists');
     const lists = tx.store;
     return lists.getAll();
+  });
+}
+
+/**
+ * @returns ids - autoIncrement
+ */
+export function addListMemberships(
+  ps: twitter.ListMembership[],
+): Promise<number[]> {
+  return withDB(async (db) => {
+    const tx = db.transaction('listMemberships', 'readwrite');
+    const listMemberships = tx.objectStore('listMemberships');
+    return Promise.all(
+      ps.map(
+        (p: twitter.ListMembership): Promise<number> => listMemberships.put(p),
+      ),
+    );
   });
 }

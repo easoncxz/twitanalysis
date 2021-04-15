@@ -37,3 +37,12 @@ export async function fetchJson(
     .then(guardOk)
     .then((r) => r.json());
 }
+
+export function queryParams(kvs: [string, string][]): string {
+  return kvs
+    .reduce((params, [k, v]) => {
+      params.append(k, v);
+      return params;
+    }, new URLSearchParams())
+    .toString();
+}

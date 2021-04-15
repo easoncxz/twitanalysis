@@ -199,9 +199,9 @@ export const ListManagement: FC<Props> = (props) => {
       <div className="sidescroll">
         <div className="source-list">
           <ListPicker {...props} />
-          <ul>
-            <li>(account in this list)</li>
-          </ul>
+          <button type="button">fetch</button>
+          <button type="button">save</button>
+          <button type="button">load</button>
         </div>
         <div className="focused-account">(Focused account)</div>
         <div className="destination-list">
