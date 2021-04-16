@@ -190,7 +190,7 @@ export function addListMemberships(
   });
 }
 
-export function listListMembers(listIdStr: string): Promise<twitter.User[]> {
+export function loadListMembers(listIdStr: string): Promise<twitter.User[]> {
   const maybeToList = <T>(x: T | undefined): T[] =>
     x === undefined ? [] : [x];
   return withDB(async (db) => {

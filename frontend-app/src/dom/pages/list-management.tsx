@@ -31,6 +31,7 @@ export const init: Model = {
 };
 
 export type Msg =
+  | { type: 'noop' }
   | {
       type: 'focus_list';
       focusIdStr: string;
@@ -53,6 +54,8 @@ export const reduce = (init: Model) => (
     return init;
   }
   switch (msg.type) {
+    case 'noop':
+      return model;
     case 'fetch_lists': {
       const focusedList: MaybeDefined<ListAndMembers> = mapMaybe(
         (l: twitter.List) => ({
@@ -194,6 +197,55 @@ export class Effects {
       ),
     };
   }
+
+  saveListMembershipsToIdb(
+    listIdStr: string,
+    users: RemoteData<twitter.User[], Error>,
+  ): Msg {
+    switch (users.type) {
+      case 'idle':
+        window.alert(`Please fetch from network first, by clicking "fetch"`);
+        return { type: 'noop' };
+      case 'loading':
+        window.alert(`Still loading, please wait.`);
+        return { type: 'noop' };
+      case 'ok': {
+        const memberships: twitter.ListMembership[] = users.data.map((u) => ({
+          userIdStr: u.id_str,
+          listIdStr,
+        }));
+        tdb.addListMemberships(memberships).then(
+          () => {
+            console.log(`saveListMembershipsToIdb success`);
+          },
+          (e) => {
+            console.error(`saveListMembershipsToIdb error: ${e.message}`);
+          },
+        );
+        return { type: 'noop' };
+      }
+      case 'error':
+        window.alert(
+          `There was an error as you can see. Please fetch again first.`,
+        );
+        return { type: 'noop' };
+      default:
+        typecheckNever(users);
+        return { type: 'noop' };
+    }
+  }
+
+  loadListMembersFromIdb(listIdStr: string): Msg {
+    return {
+      type: 'fetch_list_members',
+      listIdStr,
+      members: remoteData.launchPromise<twitter.User[], Error>(
+        (us) =>
+          this.dispatch({ type: 'fetch_list_members', listIdStr, members: us }),
+        () => tdb.loadListMembers(listIdStr),
+      ),
+    };
+  }
 }
 
 export type Props = {
@@ -280,8 +332,27 @@ const ListMembersView: FC<{
           >
             fetch
           </button>
-          <button type="button">save</button>
-          <button type="button">load</button>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch(
+                effects.saveListMembershipsToIdb(
+                  focus.list.id_str,
+                  focus.members,
+                ),
+              );
+            }}
+          >
+            save
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch(effects.loadListMembersFromIdb(focus.list.id_str));
+            }}
+          >
+            load
+          </button>
         </div>
         {(() => {
           switch (focus.members.type) {
