@@ -39,10 +39,12 @@ function guardOk(r: Response): Response {
 export async function fetchJson<T>(
   url: string,
   init?: RequestInit,
+  parser?: (_: unknown) => Promise<T>,
 ): Promise<T> {
   return fetch(url, init)
     .then(guardOk)
-    .then((r) => r.json());
+    .then((r) => r.json())
+    .then((j) => (parser ? parser(j) : j));
 }
 
 export function queryParams(kvs: [string, string][]): string {

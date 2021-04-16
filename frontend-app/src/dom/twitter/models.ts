@@ -85,6 +85,52 @@ export async function parseList(j: unknown): Promise<List> {
   return o as List;
 }
 
+export type ListMembersResponse = {
+  next_cursor: number; // 0
+  next_cursor_str: string; // "0"
+  previous_cursor: number; // 0
+  previous_cursor_str: string; // "0"
+  //total_count: null
+  users: User[];
+};
+
+export async function parseListMembersResponse(
+  x: unknown,
+): Promise<ListMembersResponse> {
+  // TypeScript's type-narrowing sucks on object key access.
+  // We're writing a parser here anyway, so some level of unsafeness
+  // can be tolerated.
+  //
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const j = x as any;
+  if (!(j instanceof Object)) {
+    throw new TypeError(
+      `ListMembersResponse should at least be an object: ${j}`,
+    );
+  } else if (
+    !('next_cursor_str' in j && typeof j.next_cursor_str === 'string')
+  ) {
+    throw new TypeError(`ListMembersResponse missing field: next_cursor_str`);
+  } else if (
+    !('previous_cursor_str' in j && typeof j.previous_cursor_str === 'string')
+  ) {
+    throw new TypeError(
+      `ListMembersResponse missing field: previous_cursor_str`,
+    );
+  } else if (!('users' in j)) {
+    throw new TypeError(`ListMembersResponse missing field: users`);
+  } else if (!(j.users instanceof Array)) {
+    throw new TypeError(
+      `ListMembersResponse.users should be an Array: ${j.users}`,
+    );
+  } else {
+    const r = j as ListMembersResponse;
+    // Force the parser on the nested field.
+    await Promise.all(r.users.map(parseUser));
+    return r;
+  }
+}
+
 /**
  * Shorthand to connect to the OAuth pass-thru endpoint on the Haskell side
  */

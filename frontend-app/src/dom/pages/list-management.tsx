@@ -188,7 +188,9 @@ export class Effects {
         () =>
           fetchJson(
             t('lists/members') + '?' + queryParams([['list_id', listIdStr]]),
-          ),
+            undefined,
+            twitter.parseListMembersResponse,
+          ).then((r) => r.users), // TODO: this is unsafe -- we want all pages
       ),
     };
   }
