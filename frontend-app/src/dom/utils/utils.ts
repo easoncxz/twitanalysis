@@ -8,6 +8,10 @@ export function typecheckNever<T>(n: never): T {
 
 export type MaybeDefined<T> = T | undefined;
 
+export const mapMaybe = <A, B>(f: (_: A) => B) => (
+  m: MaybeDefined<A>,
+): MaybeDefined<B> => (m === undefined ? undefined : f(m));
+
 export function pretty(o: unknown): string {
   return JSON.stringify(o, undefined, 4);
 }

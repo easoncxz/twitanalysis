@@ -5,13 +5,23 @@ import { t } from '../twitter/models';
 import * as tdb from '../twitter/storage';
 import { RemoteData } from '../utils/remote-data';
 import * as remoteData from '../utils/remote-data';
-import { fetchJson, typecheckNever, MaybeDefined } from '../utils/utils';
+import {
+  fetchJson,
+  typecheckNever,
+  MaybeDefined,
+  mapMaybe,
+} from '../utils/utils';
 
 type MyDispatch<T> = (_: T) => T;
 
+type ListAndMembers = {
+  list: twitter.List;
+  members: RemoteData<twitter.User[], Error>;
+};
+
 export type Model = {
   allLists: RemoteData<twitter.List[], Error>;
-  focusedList: MaybeDefined<twitter.List>;
+  focusedList: MaybeDefined<ListAndMembers>;
 };
 
 export const init: Model = {
@@ -38,8 +48,18 @@ export const reduce = (init: Model) => (
   }
   switch (msg.type) {
     case 'fetch_lists': {
-      const focusedList = remoteData.toMaybeDefined(msg.update)?.[0];
-      console.log(`Focusing on list: ${focusedList?.name}`);
+      const focusedList: MaybeDefined<ListAndMembers> = mapMaybe(
+        (l: twitter.List) => ({
+          list: l,
+          // Oh my god TypeScript's type-inference is so incapable!
+          // It's probably because of JavaScript's subtyping.
+          members: remoteData.idle<twitter.User[], Error>(),
+        }),
+      )(remoteData.toMaybeDefined(msg.update)?.[0]);
+      console.log(`Focusing on list: ${focusedList?.list.name}`);
+      // Here we kind of want something like redux-loop so that we can
+      // fire off another effect to fetch members of this list. For now,
+      // we do it via React useEffect or even just a button in the UI.
       return {
         ...model,
         allLists: remoteData.reduce(model.allLists, msg.update),
@@ -48,12 +68,12 @@ export const reduce = (init: Model) => (
     }
     case 'focus_list': {
       const focusedList = remoteData.toMaybeDefined(
-        remoteData.map(
-          (ls: twitter.List[]) =>
-            ls.filter((l) => l.id_str === msg.focusIdStr)[0],
-        )(model.allLists),
+        remoteData.map((ls: twitter.List[]) => {
+          const l = ls.filter((l) => l.id_str === msg.focusIdStr)[0];
+          return { list: l, members: remoteData.idle<twitter.User[], Error>() };
+        })(model.allLists),
       );
-      console.log(`Focusing on list: ${focusedList?.name}`);
+      console.log(`Focusing on list: ${focusedList?.list.name}`);
       return {
         ...model,
         focusedList,
@@ -152,7 +172,7 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
           case 'ok':
             return (
               <select
-                value={model.focusedList?.id_str}
+                value={model.focusedList?.list.id_str}
                 onChange={(e) => {
                   dispatch({ type: 'focus_list', focusIdStr: e.target.value });
                 }}
@@ -192,6 +212,46 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
   );
 };
 
+const ListMembersView: FC<{
+  focus: MaybeDefined<ListAndMembers>;
+  dispatch: MyDispatch<Msg>;
+}> = ({ focus }) => {
+  if (focus === undefined) {
+    return <p>No list in focus</p>;
+  } else {
+    return (
+      <>
+        <div>
+          <button type="button">fetch</button>
+          <button type="button">save</button>
+          <button type="button">load</button>
+        </div>
+        {(() => {
+          switch (focus.members.type) {
+            case 'idle':
+              return <p>Members not yet known.</p>;
+            case 'loading':
+              return <p>Loading list members...</p>;
+            case 'ok':
+              return (
+                <ul>
+                  {focus.members.data.map((u: twitter.User) => (
+                    <li key={u.id_str}>{u.screen_name}</li>
+                  ))}
+                </ul>
+              );
+            case 'error':
+              return <p>Error fetching list members.</p>;
+            default:
+              typecheckNever(focus.members);
+              return focus;
+          }
+        })()}
+      </>
+    );
+  }
+};
+
 export const ListManagement: FC<Props> = (props) => {
   return (
     <div className="page list-management">
@@ -199,9 +259,10 @@ export const ListManagement: FC<Props> = (props) => {
       <div className="sidescroll">
         <div className="source-list">
           <ListPicker {...props} />
-          <button type="button">fetch</button>
-          <button type="button">save</button>
-          <button type="button">load</button>
+          <ListMembersView
+            focus={props.model.focusedList}
+            dispatch={props.dispatch}
+          />
         </div>
         <div className="focused-account">(Focused account)</div>
         <div className="destination-list">

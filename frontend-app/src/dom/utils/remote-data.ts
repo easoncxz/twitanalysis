@@ -9,6 +9,10 @@ export type RemoteData<T, E> =
   | { type: 'ok'; data: T }
   | { type: 'error'; error: E };
 
+export const idle = <T, E>(): RemoteData<T, E> => ({ type: 'idle' });
+
+export const loading = <T, E>(): RemoteData<T, E> => ({ type: 'loading' });
+
 export function reduce<T, E>(
   model: RemoteData<T, E>,
   msg: RemoteData<T, E>,
