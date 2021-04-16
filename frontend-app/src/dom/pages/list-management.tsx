@@ -221,11 +221,16 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
                   dispatch({ type: 'focus_list', focusIdStr: e.target.value });
                 }}
               >
-                {model.allLists.data.map((l: twitter.List) => (
-                  <option key={l.id_str} value={l.id_str}>
-                    {l.name}
-                  </option>
-                ))}
+                {model.allLists.data
+                  .slice()
+                  .sort((l, r) =>
+                    l.name < r.name ? -1 : l.name > r.name ? 1 : 0,
+                  )
+                  .map((l: twitter.List) => (
+                    <option key={l.id_str} value={l.id_str}>
+                      {l.name}
+                    </option>
+                  ))}
               </select>
             );
           case 'error':
