@@ -66,8 +66,9 @@ export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
           const listMemberships = db.createObjectStore('listMemberships', {
             autoIncrement: true,
           });
-          // TODO: what to use as index keyPath?
-          listMemberships.createIndex('by-list', [], {
+          // There was some confusion about what the keyPath should be;
+          // see #24 for discussion.
+          listMemberships.createIndex('by-list', 'listIdStr', {
             unique: false,
           });
         }
@@ -191,6 +192,7 @@ export function addListMemberships(
 }
 
 export function loadListMembers(listIdStr: string): Promise<twitter.User[]> {
+  console.log(`Looking for users in the list: ${listIdStr}`);
   const maybeToList = <T>(x: T | undefined): T[] =>
     x === undefined ? [] : [x];
   return withDB(async (db) => {
@@ -199,10 +201,15 @@ export function loadListMembers(listIdStr: string): Promise<twitter.User[]> {
     const osUsers = tx.objectStore('users');
     const idx = osMemberships.index('by-list');
     const listMemberships = await idx.getAll(listIdStr);
-    return Promise.all(
+    console.log(
+      `We know there should be ${listMemberships.length} users in the list ${listIdStr}`,
+    );
+    const result = await Promise.all(
       listMemberships.map((pair) =>
         osUsers.get(pair.userIdStr).then(maybeToList),
       ),
     ).then((nested) => nested.flat());
+    console.log(`Found ${result.length} users in list ${listIdStr}`);
+    return result;
   });
 }

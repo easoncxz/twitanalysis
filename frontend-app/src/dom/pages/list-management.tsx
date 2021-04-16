@@ -182,12 +182,20 @@ export class Effects {
       type: 'fetch_list_members',
       listIdStr,
       members: remoteData.launchPromise<twitter.User[], Error>(
-        (u) =>
+        (rd: RemoteData<twitter.User[], Error>) => {
           this.dispatch({
             type: 'fetch_list_members',
             listIdStr,
-            members: u,
-          }),
+            members: rd,
+          });
+          // Do one more thing when this action finishes;
+          // again, this probably is begging for redux-loop.
+          if (rd.type === 'ok') {
+            rd.data.forEach((user) => {
+              tdb.saveUser(user);
+            });
+          }
+        },
         () =>
           fetchJson(
             t('lists/members') + '?' + queryParams([['list_id', listIdStr]]),
