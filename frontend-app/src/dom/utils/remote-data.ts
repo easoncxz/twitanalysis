@@ -46,6 +46,22 @@ export function toMaybeDefined<T, E>(d: RemoteData<T, E>): T | undefined {
   }
 }
 
+export const launchPromise = <T, E>(
+  /**
+   * The return-type of `launchPromise` and the type of this `dispatch`
+   * function would require more thought. If this doesn't return void,
+   * it's hard to get the call-site to compile.
+   */
+  dispatch: (_: RemoteData<T, E>) => void,
+  action: () => Promise<T>,
+): RemoteData<T, E> => {
+  action().then(
+    (x: T) => dispatch({ type: 'ok', data: x }),
+    (e: E) => dispatch({ type: 'error', error: e }),
+  );
+  return { type: 'loading' };
+};
+
 export const map = <A, B, E>(f: (_: A) => B) => (
   d: RemoteData<A, E>,
 ): RemoteData<B, E> => {

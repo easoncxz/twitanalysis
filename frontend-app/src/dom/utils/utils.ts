@@ -33,10 +33,13 @@ function guardOk(r: Response): Response {
   }
 }
 
-export async function fetchJson(
+/**
+ * No parsing. That can be added as an optional param later.
+ */
+export async function fetchJson<T>(
   url: string,
   init?: RequestInit,
-): Promise<unknown> {
+): Promise<T> {
   return fetch(url, init)
     .then(guardOk)
     .then((r) => r.json());

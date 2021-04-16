@@ -10,6 +10,7 @@ import {
   typecheckNever,
   MaybeDefined,
   mapMaybe,
+  queryParams,
 } from '../utils/utils';
 
 type MyDispatch<T> = (_: T) => T;
@@ -37,6 +38,11 @@ export type Msg =
   | {
       type: 'fetch_lists';
       update: RemoteData<twitter.List[], Error>;
+    }
+  | {
+      type: 'fetch_list_members';
+      listIdStr: string;
+      members: RemoteData<twitter.User[], Error>;
     };
 
 export const reduce = (init: Model) => (
@@ -78,6 +84,23 @@ export const reduce = (init: Model) => (
         ...model,
         focusedList,
       };
+    }
+    case 'fetch_list_members': {
+      if (model.focusedList === undefined) {
+        // No focused list; ignoring any incoming results
+        return model;
+      } else if (model.focusedList.list.id_str !== msg.listIdStr) {
+        // The response came too late. We now ignore it.
+        return model;
+      } else {
+        return {
+          ...model,
+          focusedList: {
+            ...model.focusedList,
+            members: remoteData.reduce(model.focusedList?.members, msg.members),
+          },
+        };
+      }
     }
     default:
       typecheckNever(msg);
@@ -150,6 +173,25 @@ export class Effects {
       update: { type: 'loading' },
     };
   }
+
+  fetchListMembersFromNetwork(listIdStr: string): Msg {
+    return {
+      type: 'fetch_list_members',
+      listIdStr,
+      members: remoteData.launchPromise<twitter.User[], Error>(
+        (u) =>
+          this.dispatch({
+            type: 'fetch_list_members',
+            listIdStr,
+            members: u,
+          }),
+        () =>
+          fetchJson(
+            t('lists/members') + '?' + queryParams([['list_id', listIdStr]]),
+          ),
+      ),
+    };
+  }
 }
 
 export type Props = {
@@ -215,14 +257,22 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
 const ListMembersView: FC<{
   focus: MaybeDefined<ListAndMembers>;
   dispatch: MyDispatch<Msg>;
-}> = ({ focus }) => {
+}> = ({ focus, dispatch }) => {
+  const effects = new Effects(dispatch);
   if (focus === undefined) {
     return <p>No list in focus</p>;
   } else {
     return (
       <>
         <div>
-          <button type="button">fetch</button>
+          <button
+            type="button"
+            onClick={() =>
+              dispatch(effects.fetchListMembersFromNetwork(focus.list.id_str))
+            }
+          >
+            fetch
+          </button>
           <button type="button">save</button>
           <button type="button">load</button>
         </div>
@@ -232,14 +282,16 @@ const ListMembersView: FC<{
               return <p>Members not yet known.</p>;
             case 'loading':
               return <p>Loading list members...</p>;
-            case 'ok':
+            case 'ok': {
+              const users: twitter.User[] = focus.members.data;
               return (
                 <ul>
-                  {focus.members.data.map((u: twitter.User) => (
+                  {users.map((u) => (
                     <li key={u.id_str}>{u.screen_name}</li>
                   ))}
                 </ul>
               );
+            }
             case 'error':
               return <p>Error fetching list members.</p>;
             default:
