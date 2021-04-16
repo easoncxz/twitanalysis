@@ -1,7 +1,7 @@
 {
     "extends": "../base-tsconfig.json",
     "compilerOptions": {
-        "lib": ["es2015", "dom"]
+        "lib": ["es2019", "dom"]
     },
     "references": [
         { "path": "../sw" }

@@ -183,11 +183,26 @@ export function addListMemberships(
 ): Promise<number[]> {
   return withDB(async (db) => {
     const tx = db.transaction('listMemberships', 'readwrite');
-    const listMemberships = tx.objectStore('listMemberships');
+    const os = tx.objectStore('listMemberships');
     return Promise.all(
-      ps.map(
-        (p: twitter.ListMembership): Promise<number> => listMemberships.put(p),
-      ),
+      ps.map((p: twitter.ListMembership): Promise<number> => os.put(p)),
     );
+  });
+}
+
+export function listListMembers(listIdStr: string): Promise<twitter.User[]> {
+  const maybeToList = <T>(x: T | undefined): T[] =>
+    x === undefined ? [] : [x];
+  return withDB(async (db) => {
+    const tx = db.transaction(['listMemberships', 'users']);
+    const osMemberships = tx.objectStore('listMemberships');
+    const osUsers = tx.objectStore('users');
+    const idx = osMemberships.index('by-list');
+    const listMemberships = await idx.getAll(listIdStr);
+    return Promise.all(
+      listMemberships.map((pair) =>
+        osUsers.get(pair.userIdStr).then(maybeToList),
+      ),
+    ).then((nested) => nested.flat());
   });
 }

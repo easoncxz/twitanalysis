@@ -1,6 +1,6 @@
 {
     "extends": "../base-tsconfig.json",
     "compilerOptions": {
-        "lib": ["es2015", "webworker"]
+        "lib": ["es2019", "webworker"]
     }
 }
