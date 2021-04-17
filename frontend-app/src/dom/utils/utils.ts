@@ -56,3 +56,15 @@ export function queryParams(kvs: [string, string][]): string {
     }, new URLSearchParams())
     .toString();
 }
+
+export function defOpts<T extends { [k: string]: T[typeof k] | undefined }>(
+  o?: T,
+): {
+  [k in keyof T]: T[k] | undefined;
+} {
+  if (o === undefined) {
+    return {} as T;
+  } else {
+    return o;
+  }
+}

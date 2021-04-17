@@ -11,6 +11,7 @@ import {
   MaybeDefined,
   mapMaybe,
   queryParams,
+  defOpts,
 } from '../utils/utils';
 
 type MyDispatch<T> = (_: T) => T;
@@ -20,16 +21,21 @@ type ListAndMembers = {
   members: RemoteData<twitter.User[], Error>;
 };
 
+type UserAndTweets = {
+  user: twitter.User;
+  tweets: RemoteData<twitter.Status[], Error>;
+};
+
 export type Model = {
   allLists: RemoteData<twitter.List[], Error>;
   focusedList: MaybeDefined<ListAndMembers>;
-  focusedUser: MaybeDefined<twitter.User>;
+  userFocus: MaybeDefined<UserAndTweets>;
 };
 
 export const init: Model = {
   allLists: { type: 'idle' },
   focusedList: undefined,
-  focusedUser: undefined,
+  userFocus: undefined,
 };
 
 export type Msg =
@@ -47,6 +53,11 @@ export type Msg =
       type: 'fetch_list_members';
       listIdStr: string;
       members: RemoteData<twitter.User[], Error>;
+    }
+  | {
+      type: 'fetch_user_timeline';
+      userIdStr: string;
+      tweets: RemoteData<twitter.Status[], Error>;
     };
 
 export const reduce = (init: Model) => (
@@ -102,12 +113,18 @@ export const reduce = (init: Model) => (
     case 'focus_user': {
       return {
         ...model,
-        focusedUser: msg.user,
+        userFocus: mapMaybe(
+          (u) => ({
+            user: u,
+            tweets: remoteData.idle<twitter.Status[]>(),
+          }),
+          msg.user,
+        ),
       };
     }
     case 'fetch_list_members': {
       if (model.focusedList === undefined) {
-        // No focused list; ignoring any incoming results
+        // No focused list; ignoring any incoming messages
         return model;
       } else if (model.focusedList.list.id_str !== msg.listIdStr) {
         // The response came too late. We now ignore it.
@@ -118,6 +135,25 @@ export const reduce = (init: Model) => (
           focusedList: {
             ...model.focusedList,
             members: remoteData.reduce(model.focusedList?.members, msg.members),
+          },
+        };
+      }
+    }
+    case 'fetch_user_timeline': {
+      if (model.userFocus === undefined) {
+        // no focused user; ignoring incoming messages
+        return model;
+      } else if (model.userFocus.user.id_str !== msg.userIdStr) {
+        // The repsonse is for a different user. We now ignore it.
+        // Although, if we can dispatch an action here, it would be
+        // better to save it to idb anyway.
+        return model;
+      } else {
+        return {
+          ...model,
+          userFocus: {
+            ...model.userFocus,
+            tweets: remoteData.reduce(model.userFocus.tweets, msg.tweets),
           },
         };
       }
@@ -278,6 +314,63 @@ export class Effects {
       ),
     };
   }
+
+  fetchUserTimeline(
+    userIdStr: string,
+    opts?: {
+      maxId?: string;
+      sinceId?: string;
+    },
+  ): Msg {
+    const { maxId, sinceId } = defOpts(opts);
+    const pagingParams = ([] as [string, string][])
+      .concat(maxId ? [['max_id', maxId]] : [])
+      .concat(sinceId ? [['since_id', sinceId]] : []);
+    const tweets = remoteData.launchPromise<twitter.Status[]>(
+      (ts) => {
+        this.dispatch({
+          type: 'fetch_user_timeline',
+          userIdStr,
+          tweets: ts,
+        });
+      },
+      () =>
+        fetchJson(
+          t('statuses/user_timeline') +
+            '?' +
+            queryParams([['user_id', userIdStr], ...pagingParams]),
+        ),
+    );
+    return {
+      type: 'fetch_user_timeline',
+      userIdStr,
+      tweets,
+    };
+  }
+
+  saveUserTweets(userIdStr: string, tweets: twitter.Status[]): Msg {
+    // no UI updates
+    void userIdStr;
+    tdb.putTweets(tweets);
+    return { type: 'noop' };
+  }
+
+  loadUserTweets(userIdStr: string): Msg {
+    return {
+      type: 'fetch_user_timeline',
+      userIdStr,
+      tweets: remoteData.launchPromise<twitter.Status[]>(
+        (ts) => {
+          this.dispatch({
+            type: 'fetch_user_timeline',
+            userIdStr,
+            tweets: ts,
+          });
+        },
+        () => tdb.readUserTweets(userIdStr),
+      ),
+    };
+  }
 }
 
 export type Props = {
@@ -351,9 +444,9 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
 
 const ListMembersView: FC<{
   focusedList: MaybeDefined<ListAndMembers>;
-  focusedUser: MaybeDefined<twitter.User>;
+  userFocus: MaybeDefined<UserAndTweets>;
   dispatch: MyDispatch<Msg>;
-}> = ({ focusedList, focusedUser, dispatch }) => {
+}> = ({ focusedList, userFocus, dispatch }) => {
   const effects = new Effects(dispatch);
   if (focusedList === undefined) {
     return <p>No list in focus</p>;
@@ -398,7 +491,7 @@ const ListMembersView: FC<{
               return (
                 <ul>
                   {users.map((u) => {
-                    const isTheFocus = u.id_str === focusedUser?.id_str;
+                    const isTheFocus = u.id_str === userFocus?.user.id_str;
                     const newFocus = isTheFocus ? undefined : u;
                     const classNameProps = isTheFocus
                       ? { className: 'source-list-user focused' }
@@ -431,14 +524,72 @@ const ListMembersView: FC<{
   }
 };
 
-const FocusedUser: FC<{
-  focusedUser: MaybeDefined<twitter.User>;
+const Timeline: FC<{
+  tweets: twitter.Status[];
   dispatch: MyDispatch<Msg>;
-}> = ({ focusedUser }) => {
-  if (focusedUser === undefined) {
+}> = ({ tweets }) => {
+  return (
+    <ul>
+      {tweets.map((t) => (
+        <li key={t.id_str}>{t.text}</li>
+      ))}
+    </ul>
+  );
+};
+
+const FocusedUser: FC<{
+  userFocus: MaybeDefined<UserAndTweets>;
+  dispatch: MyDispatch<Msg>;
+}> = ({ userFocus, dispatch }) => {
+  const effects = new Effects(dispatch);
+  if (userFocus === undefined) {
     return <p>Click a user on the left.</p>;
   } else {
-    return <p>{`You're focused on ${focusedUser.name}`}</p>;
+    const { user, tweets } = userFocus;
+    return (
+      <>
+        <p>{`You're focused on ${user.name}`}</p>
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch(effects.fetchUserTimeline(user.id_str));
+            }}
+          >
+            fetch
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (tweets.type === 'ok') {
+                console.log(
+                  `Saving ${tweets.data.length} tweets for user ${user.name}`,
+                );
+                dispatch(effects.saveUserTweets(user.id_str, tweets.data));
+              } else {
+                console.log(
+                  `No tweets available to save for user ${user.name}`,
+                );
+              }
+            }}
+          >
+            save
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              console.log(`Loading tweets for user ${user.name}`);
+              dispatch(effects.loadUserTweets(user.id_str));
+            }}
+          >
+            load
+          </button>
+          {remoteData.simpleView(userFocus.tweets, (ts) => (
+            <Timeline tweets={ts} dispatch={dispatch} />
+          ))}
+        </div>
+      </>
+    );
   }
 };
 
@@ -480,13 +631,13 @@ export const ListManagement: FC<Props> = (props) => {
           <ListPicker {...props} />
           <ListMembersView
             focusedList={props.model.focusedList}
-            focusedUser={props.model.focusedUser}
+            userFocus={props.model.userFocus}
             dispatch={props.dispatch}
           />
         </div>
         <div className="focused-account">
           <FocusedUser
-            focusedUser={props.model.focusedUser}
+            userFocus={props.model.userFocus}
             dispatch={props.dispatch}
           />
         </div>

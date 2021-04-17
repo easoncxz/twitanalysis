@@ -1,3 +1,4 @@
+import React from 'react';
 import { typecheckNever } from './utils';
 
 /**
@@ -9,11 +10,13 @@ export type RemoteData<T, E> =
   | { type: 'ok'; data: T }
   | { type: 'error'; error: E };
 
-export const idle = <T, E>(): RemoteData<T, E> => ({ type: 'idle' });
+export const idle = <T, E = Error>(): RemoteData<T, E> => ({ type: 'idle' });
 
-export const loading = <T, E>(): RemoteData<T, E> => ({ type: 'loading' });
+export const loading = <T, E = Error>(): RemoteData<T, E> => ({
+  type: 'loading',
+});
 
-export function reduce<T, E>(
+export function reduce<T, E = Error>(
   model: RemoteData<T, E>,
   msg: RemoteData<T, E>,
 ): RemoteData<T, E> {
@@ -32,7 +35,25 @@ export function reduce<T, E>(
   }
 }
 
-export function toMaybeDefined<T, E>(d: RemoteData<T, E>): T | undefined {
+export function simpleView<T, E extends Error>(
+  model: RemoteData<T, E>,
+  ok: (_: T) => React.ReactElement | null,
+): React.ReactElement | null {
+  switch (model.type) {
+    case 'idle':
+      return <p>idle</p>;
+    case 'loading':
+      return <p>loading</p>;
+    case 'ok':
+      return ok(model.data);
+    case 'error':
+      return <p>error: {model.error.message}</p>;
+  }
+}
+
+export function toMaybeDefined<T, E = Error>(
+  d: RemoteData<T, E>,
+): T | undefined {
   switch (d.type) {
     case 'idle':
     case 'loading':
@@ -46,7 +67,12 @@ export function toMaybeDefined<T, E>(d: RemoteData<T, E>): T | undefined {
   }
 }
 
-export const launchPromise = <T, E>(
+/**
+ * Probably not worth using longer-term. TypeScript's type-inference here
+ * just isn't getting the job done -- explicit T and E will need to be
+ * specified at the call site. Bad!
+ */
+export const launchPromise = <T, E = Error>(
   /**
    * The return-type of `launchPromise` and the type of this `dispatch`
    * function would require more thought. If this doesn't return void,

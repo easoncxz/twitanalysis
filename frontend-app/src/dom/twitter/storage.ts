@@ -183,6 +183,16 @@ export function readAllTweets(): Promise<twitter.Status[]> {
   });
 }
 
+export function readUserTweets(userIdStr: string): Promise<twitter.Status[]> {
+  return withDB(async (db) => {
+    const tx = db.transaction('tweets');
+    const os = tx.objectStore('tweets');
+    // Use the very nice new index we have:
+    const byUser = os.index('by-user');
+    return byUser.getAll(userIdStr);
+  });
+}
+
 export function storeLists(ls: twitter.List[]): Promise<string[]> {
   return withDB(async (db) => {
     const tx = db.transaction('lists', 'readwrite');
