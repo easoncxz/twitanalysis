@@ -6,7 +6,7 @@ There are some journal entries
 
 See them here:
 
-{% assign sorted_entries = site.journal_entries | sort %}
+{% assign sorted_entries = site.journal_entries | sort | reverse %}
 {% for j in sorted_entries %}
 - [{{ j.date | date: "%Y-%m-%d" }} - {{ j.title }}]({{ j.url | relative_url }})
 {% endfor %}

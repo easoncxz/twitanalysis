@@ -14,6 +14,7 @@ ignore/
 # Jekyll temp files
 .sass-cache
 _site
+docs/.jekyll-metadata
 
 # twitanalysis packages
 built-packages/
