@@ -124,16 +124,17 @@ export class Effects {
   loadListsFromIdb<T>(cont?: (_: twitter.List[]) => T): Msg {
     tdb.readLists().then(
       (lists: twitter.List[]) => {
+        const sorted = lists
+          .slice()
+          .sort((l, r) => (l.name < r.name ? -1 : l.name > r.name ? 1 : 0));
         this.dispatch({
           type: 'fetch_lists',
           update: {
             type: 'ok',
-            data: lists
-              .slice()
-              .sort((l, r) => (l.name < r.name ? -1 : l.name > r.name ? 1 : 0)),
+            data: sorted,
           },
         });
-        cont?.(lists);
+        cont?.(sorted);
       },
       (e) => {
         console.error(`tdb.readLists failed: ${e.message}`, e);
@@ -412,19 +413,32 @@ const ListMembersView: FC<{
 export const ListManagement: FC<Props> = (props) => {
   const effects = new Effects(props.dispatch);
   React.useEffect(() => {
-    effects.loadListsFromIdb((lists) => {
-      // DEBUG: make debugging easier, fewer clicks
-      if (lists) {
-        const focal: twitter.List | undefined = lists[0];
-        if (focal) {
-          props.dispatch({
-            type: 'focus_list',
-            focusIdStr: focal.id_str,
-          });
-          props.dispatch(effects.loadListMembersFromIdb(focal.id_str));
+    effects.loadListsFromIdb(
+      /**
+       * This whole callback pattern is such a hack.
+       *
+       * The problem here is that the `dispatch` function is (rightfully)
+       * not in-scope inside the `reduce` function definition, and that
+       * `Effects#loadListsFromIdb` returns `Msg` instead of some kind of
+       * `Promise<twitter.List[]>`, so we can't just call `.then` here.
+       *
+       * It's likely that a better solution would involve some kind of
+       * real effect-management library, like redux-loop or redux-saga.
+       */
+      (lists) => {
+        // DEBUG: make debugging easier, fewer clicks
+        if (lists) {
+          const focal: twitter.List | undefined = lists[0];
+          if (focal) {
+            props.dispatch({
+              type: 'focus_list',
+              focusIdStr: focal.id_str,
+            });
+            props.dispatch(effects.loadListMembersFromIdb(focal.id_str));
+          }
         }
-      }
-    });
+      },
+    );
   }, []);
   return (
     <div className="page list-management">
