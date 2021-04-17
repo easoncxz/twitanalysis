@@ -136,39 +136,31 @@ export class Effects {
     };
   }
 
-  fetchListsFromNetwork(opts: {
-    silenceNetwork?: boolean;
-    silenceIdb?: boolean;
-  }): Msg {
-    const silenceNetwork = opts.silenceNetwork ?? false;
-    const silenceIdb = opts.silenceIdb ?? false;
-    fetchJson(t('lists/list') + '?reverse=true')
-      .then(twitter.parseArray(twitter.parseList))
+  fetchListsFromNetwork(): Msg {
+    fetchJson(
+      t('lists/list') + '?reverse=true',
+      undefined,
+      twitter.parseArray(twitter.parseList),
+    )
       .then(
         (lists: twitter.List[]) => {
           this.dispatch({
             type: 'fetch_lists',
             update: { type: 'ok', data: lists },
           });
-          return tdb.storeLists(lists);
+          return lists;
         },
         (e) => {
           console.error(`fetchJson failed when loading lists: ${e.message}`);
-          if (!silenceNetwork) {
-            this.dispatch({
-              type: 'fetch_lists',
-              update: { type: 'error', error: e },
-            });
-          }
-        },
-      )
-      .catch((e) => {
-        console.error(`tdb.storeLists failed: ${e.message}`, e);
-        if (!silenceIdb) {
           this.dispatch({
             type: 'fetch_lists',
             update: { type: 'error', error: e },
           });
+        },
+      )
+      .then((lists) => {
+        if (lists) {
+          tdb.storeLists(lists);
         }
       });
     return {
@@ -269,7 +261,7 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
         switch (model.allLists.type) {
           case 'idle':
             return (
-              <div className="select">{`Click "refresh" to load lists.`}</div>
+              <div className="select">{`Click "fetch" to fetch lists.`}</div>
             );
           case 'loading':
             return <div className="select">Loading...</div>;
@@ -307,15 +299,24 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
         }
       })()}
       {(model.allLists.type === 'idle' || model.allLists.type === 'error') && (
-        <button
-          type="button"
-          onClick={() => {
-            effects.fetchListsFromNetwork({ silenceNetwork: true });
-            dispatch(effects.loadListsFromIdb());
-          }}
-        >
-          refresh
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch(effects.fetchListsFromNetwork());
+            }}
+          >
+            fetch and save
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              dispatch(effects.loadListsFromIdb());
+            }}
+          >
+            load
+          </button>
+        </>
       )}
     </div>
   );
