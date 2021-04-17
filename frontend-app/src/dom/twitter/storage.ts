@@ -7,6 +7,13 @@ interface TwitDb extends DBSchema {
   tweets: {
     key: string;
     value: twitter.Status;
+    indexes: {
+      'by-user': string;
+    };
+  };
+  favourites: {
+    key: string;
+    value: twitter.Status;
   };
   users: {
     key: string;
@@ -26,7 +33,7 @@ interface TwitDb extends DBSchema {
 }
 
 const dbName = 'twitanalysis-idb';
-const currentVersion = 3;
+const currentVersion = 4;
 
 export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
   const db: IDBPDatabase<TwitDb> = await openDB<TwitDb>(
@@ -42,7 +49,7 @@ export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
       blocking() {
         console.log("Sorry, just a moment and we'll head off");
       },
-      upgrade(
+      async upgrade(
         db: IDBPDatabase<TwitDb>,
         oldVersion: number,
         _newVersion: number,
@@ -69,6 +76,24 @@ export async function openMyDB(): Promise<IDBPDatabase<TwitDb>> {
           // There was some confusion about what the keyPath should be;
           // see #24 for discussion.
           listMemberships.createIndex('by-list', 'listIdStr', {
+            unique: false,
+          });
+        }
+        if (oldVersion < 4) {
+          const tweets = tx.objectStore('tweets');
+          const favourites = db.createObjectStore('favourites', {
+            keyPath: 'id_str',
+          });
+          // Copy all tweets from "tweets" into "favourites", since
+          // so far we only have favourites.
+          let tweetsCursor = await tweets.openCursor();
+          while (tweetsCursor) {
+            favourites.put(tweetsCursor.value);
+            tweetsCursor = await tweetsCursor.continue();
+          }
+          // Now the "tweets" table is really just tweets.
+          await tweets.clear();
+          tweets.createIndex('by-user', 'user.id_str', {
             unique: false,
           });
         }
