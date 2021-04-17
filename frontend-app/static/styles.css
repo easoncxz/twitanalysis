@@ -73,13 +73,9 @@ nav > .nav-item:visited {
   flex-grow: 2;
 }
 
-.page.list-management .sidescroll .source-list li.source-list-user:hover {
+.page.list-management .sidescroll .source-list li.source-list-user.focused {
   background-color: #000;
   color: #fff;
-}
-
-.page.list-management .sidescroll .source-list li.source-list-user.focused {
-  background-color: #666;
 }
 
 .page.list-management .sidescroll .focused-account {

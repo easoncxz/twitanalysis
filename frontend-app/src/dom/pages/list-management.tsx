@@ -23,11 +23,13 @@ type ListAndMembers = {
 export type Model = {
   allLists: RemoteData<twitter.List[], Error>;
   focusedList: MaybeDefined<ListAndMembers>;
+  focusedUser: MaybeDefined<twitter.User>;
 };
 
 export const init: Model = {
   allLists: { type: 'idle' },
   focusedList: undefined,
+  focusedUser: undefined,
 };
 
 export type Msg =
@@ -36,6 +38,7 @@ export type Msg =
       type: 'focus_list';
       focusIdStr: string;
     }
+  | { type: 'focus_user'; user: MaybeDefined<twitter.User> }
   | {
       type: 'fetch_lists';
       update: RemoteData<twitter.List[], Error>;
@@ -93,6 +96,13 @@ export const reduce = (init: Model) => (
       return {
         ...model,
         focusedList,
+      };
+    }
+
+    case 'focus_user': {
+      return {
+        ...model,
+        focusedUser: msg.user,
       };
     }
     case 'fetch_list_members': {
@@ -340,20 +350,22 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
 };
 
 const ListMembersView: FC<{
-  focus: MaybeDefined<ListAndMembers>;
+  focusedList: MaybeDefined<ListAndMembers>;
+  focusedUser: MaybeDefined<twitter.User>;
   dispatch: MyDispatch<Msg>;
-}> = ({ focus, dispatch }) => {
+}> = ({ focusedList, focusedUser, dispatch }) => {
   const effects = new Effects(dispatch);
-  if (focus === undefined) {
+  if (focusedList === undefined) {
     return <p>No list in focus</p>;
   } else {
+    const { list, members } = focusedList;
     return (
       <>
         <div>
           <button
             type="button"
             onClick={() =>
-              dispatch(effects.fetchListMembersFromNetwork(focus.list.id_str))
+              dispatch(effects.fetchListMembersFromNetwork(list.id_str))
             }
           >
             fetch
@@ -361,12 +373,7 @@ const ListMembersView: FC<{
           <button
             type="button"
             onClick={() => {
-              dispatch(
-                effects.saveListMembershipsToIdb(
-                  focus.list.id_str,
-                  focus.members,
-                ),
-              );
+              dispatch(effects.saveListMembershipsToIdb(list.id_str, members));
             }}
           >
             save
@@ -374,35 +381,49 @@ const ListMembersView: FC<{
           <button
             type="button"
             onClick={() => {
-              dispatch(effects.loadListMembersFromIdb(focus.list.id_str));
+              dispatch(effects.loadListMembersFromIdb(list.id_str));
             }}
           >
             load
           </button>
         </div>
         {(() => {
-          switch (focus.members.type) {
+          switch (members.type) {
             case 'idle':
               return <p>Members not yet known.</p>;
             case 'loading':
               return <p>Loading list members...</p>;
             case 'ok': {
-              const users: twitter.User[] = focus.members.data;
+              const users: twitter.User[] = members.data;
               return (
                 <ul>
-                  {users.map((u) => (
-                    <li className="source-list-user" key={u.id_str}>
-                      {u.screen_name}
-                    </li>
-                  ))}
+                  {users.map((u) => {
+                    const isTheFocus = u.id_str === focusedUser?.id_str;
+                    const newFocus = isTheFocus ? undefined : u;
+                    const classNameProps = isTheFocus
+                      ? { className: 'source-list-user focused' }
+                      : { className: 'source-list-user' };
+                    return (
+                      <li {...classNameProps} key={u.id_str}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            dispatch({ type: 'focus_user', user: newFocus });
+                          }}
+                        >
+                          {u.screen_name}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               );
             }
             case 'error':
               return <p>Error fetching list members.</p>;
             default:
-              typecheckNever(focus.members);
-              return focus;
+              typecheckNever(members);
+              return members;
           }
         })()}
       </>
@@ -447,7 +468,8 @@ export const ListManagement: FC<Props> = (props) => {
         <div className="source-list">
           <ListPicker {...props} />
           <ListMembersView
-            focus={props.model.focusedList}
+            focusedList={props.model.focusedList}
+            focusedUser={props.model.focusedUser}
             dispatch={props.dispatch}
           />
         </div>
