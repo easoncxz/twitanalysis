@@ -431,6 +431,17 @@ const ListMembersView: FC<{
   }
 };
 
+const FocusedUser: FC<{
+  focusedUser: MaybeDefined<twitter.User>;
+  dispatch: MyDispatch<Msg>;
+}> = ({ focusedUser }) => {
+  if (focusedUser === undefined) {
+    return <p>Click a user on the left.</p>;
+  } else {
+    return <p>{`You're focused on ${focusedUser.name}`}</p>;
+  }
+};
+
 export const ListManagement: FC<Props> = (props) => {
   const effects = new Effects(props.dispatch);
   React.useEffect(() => {
@@ -473,7 +484,12 @@ export const ListManagement: FC<Props> = (props) => {
             dispatch={props.dispatch}
           />
         </div>
-        <div className="focused-account">(Focused account)</div>
+        <div className="focused-account">
+          <FocusedUser
+            focusedUser={props.model.focusedUser}
+            dispatch={props.dispatch}
+          />
+        </div>
         <div className="destination-list">
           Destination list:
           <ul>
