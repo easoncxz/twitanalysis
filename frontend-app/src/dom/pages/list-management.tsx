@@ -64,7 +64,8 @@ export const reduce = (init: Model) => (
           // It's probably because of JavaScript's subtyping.
           members: remoteData.idle<twitter.User[], Error>(),
         }),
-      )(remoteData.toMaybeDefined(msg.update)?.[0]);
+        remoteData.toMaybeDefined(msg.update)?.[0],
+      );
       console.log(`Focusing on list: ${focusedList?.list.name}`);
       // Here we kind of want something like redux-loop so that we can
       // fire off another effect to fetch members of this list. For now,
@@ -76,11 +77,17 @@ export const reduce = (init: Model) => (
       };
     }
     case 'focus_list': {
-      const focusedList = remoteData.toMaybeDefined(
+      const list: MaybeDefined<twitter.List> = remoteData.toMaybeDefined(
         remoteData.map((ls: twitter.List[]) => {
-          const l = ls.filter((l) => l.id_str === msg.focusIdStr)[0];
-          return { list: l, members: remoteData.idle<twitter.User[], Error>() };
+          return ls.filter((l) => l.id_str === msg.focusIdStr)[0];
         })(model.allLists),
+      );
+      const focusedList = mapMaybe(
+        (l) => ({
+          list: l,
+          members: remoteData.idle<twitter.User[], Error>(),
+        }),
+        list,
       );
       console.log(`Focusing on list: ${focusedList?.list.name}`);
       return {
@@ -114,22 +121,28 @@ export const reduce = (init: Model) => (
 export class Effects {
   constructor(private readonly dispatch: MyDispatch<Msg>) {}
 
-  loadListsFromIdb(): Msg {
-    tdb
-      .readLists()
-      .then((lists: twitter.List[]) => {
+  loadListsFromIdb<T>(cont?: (_: twitter.List[]) => T): Msg {
+    tdb.readLists().then(
+      (lists: twitter.List[]) => {
         this.dispatch({
           type: 'fetch_lists',
-          update: { type: 'ok', data: lists },
+          update: {
+            type: 'ok',
+            data: lists
+              .slice()
+              .sort((l, r) => (l.name < r.name ? -1 : l.name > r.name ? 1 : 0)),
+          },
         });
-      })
-      .catch((e) => {
+        cont?.(lists);
+      },
+      (e) => {
         console.error(`tdb.readLists failed: ${e.message}`, e);
         this.dispatch({
           type: 'fetch_lists',
           update: { type: 'error', error: e },
         });
-      });
+      },
+    );
     return {
       type: 'fetch_lists',
       update: { type: 'loading' },
@@ -146,7 +159,14 @@ export class Effects {
         (lists: twitter.List[]) => {
           this.dispatch({
             type: 'fetch_lists',
-            update: { type: 'ok', data: lists },
+            update: {
+              type: 'ok',
+              data: lists
+                .slice()
+                .sort((l, r) =>
+                  l.name < r.name ? -1 : l.name > r.name ? 1 : 0,
+                ),
+            },
           });
           return lists;
         },
@@ -162,6 +182,7 @@ export class Effects {
         if (lists) {
           tdb.storeLists(lists);
         }
+        return lists;
       });
     return {
       type: 'fetch_lists',
@@ -273,16 +294,11 @@ const ListPicker: FC<Props> = ({ model, dispatch }) => {
                   dispatch({ type: 'focus_list', focusIdStr: e.target.value });
                 }}
               >
-                {model.allLists.data
-                  .slice()
-                  .sort((l, r) =>
-                    l.name < r.name ? -1 : l.name > r.name ? 1 : 0,
-                  )
-                  .map((l: twitter.List) => (
-                    <option key={l.id_str} value={l.id_str}>
-                      {l.name}
-                    </option>
-                  ))}
+                {model.allLists.data.map((l: twitter.List) => (
+                  <option key={l.id_str} value={l.id_str}>
+                    {l.name}
+                  </option>
+                ))}
               </select>
             );
           case 'error':
@@ -374,7 +390,9 @@ const ListMembersView: FC<{
               return (
                 <ul>
                   {users.map((u) => (
-                    <li key={u.id_str}>{u.screen_name}</li>
+                    <li className="source-list-user" key={u.id_str}>
+                      {u.screen_name}
+                    </li>
                   ))}
                 </ul>
               );
@@ -392,6 +410,22 @@ const ListMembersView: FC<{
 };
 
 export const ListManagement: FC<Props> = (props) => {
+  const effects = new Effects(props.dispatch);
+  React.useEffect(() => {
+    effects.loadListsFromIdb((lists) => {
+      // DEBUG: make debugging easier, fewer clicks
+      if (lists) {
+        const focal: twitter.List | undefined = lists[0];
+        if (focal) {
+          props.dispatch({
+            type: 'focus_list',
+            focusIdStr: focal.id_str,
+          });
+          props.dispatch(effects.loadListMembersFromIdb(focal.id_str));
+        }
+      }
+    });
+  }, []);
   return (
     <div className="page list-management">
       <p>Manage your Twitter lists</p>

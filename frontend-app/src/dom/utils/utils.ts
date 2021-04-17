@@ -8,7 +8,8 @@ export function typecheckNever<T>(n: never): T {
 
 export type MaybeDefined<T> = T | undefined;
 
-export const mapMaybe = <A, B>(f: (_: A) => B) => (
+export const mapMaybe = <A, B>(
+  f: (_: A) => B,
   m: MaybeDefined<A>,
 ): MaybeDefined<B> => (m === undefined ? undefined : f(m));
 
@@ -21,7 +22,7 @@ export function* stringEnumValues<T extends string>(enumObj: {
   [key: string]: T;
 }): IterableIterator<T> {
   for (const property in enumObj) {
-    yield enumObj[property];
+    yield enumObj[property] as T;
   }
 }
 

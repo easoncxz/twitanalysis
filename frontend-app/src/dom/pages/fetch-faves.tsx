@@ -136,9 +136,7 @@ export const View: React.FC<{
     dispatch(
       effects.fetchFaves(nick, {
         count: 200,
-        max_id: model.faves.length
-          ? model.faves[model.faves.length - 1].id_str
-          : undefined,
+        max_id: model.faves[model.faves.length - 1]?.id_str,
       }),
     );
   };
