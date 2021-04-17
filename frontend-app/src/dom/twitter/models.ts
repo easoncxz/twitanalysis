@@ -1,7 +1,10 @@
 export type User = {
   id_str: string;
-  name: string;
-  screen_name: string;
+  name: string; // "Phil Goff"
+  screen_name: string; // "phil_goff"
+  profile_image_url: string; // "http://pbs.twimg.com/profile_images/1072683635621281797/ebsUlzkr_normal.jpg"
+  profile_banner_url: string; // "https://pbs.twimg.com/profile_banners/18149977/1590717571"
+  protected: boolean; // this is about locked (aka private) accounts // false
 };
 
 async function parseObject(j: unknown): Promise<object> {
@@ -27,7 +30,9 @@ export async function parseUser(j: unknown): Promise<User> {
 export type Status = {
   id_str: string;
   text: string;
-  created_at: string;
+  created_at: string; // "Tue Apr 06 15:55:10 +0000 2021"
+  in_reply_to_status_id_str: string;
+  user?: User; // some APIs don't include the user in the Status object. GraphQL.
 };
 
 export async function parseStatus(j: unknown): Promise<Status> {
