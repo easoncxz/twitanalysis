@@ -48,13 +48,11 @@ export async function fetchJson<T>(
     .then((j) => (parser ? parser(j) : j));
 }
 
-export function queryParams(kvs: [string, string][]): string {
-  return kvs
-    .reduce((params, [k, v]) => {
-      params.append(k, v);
-      return params;
-    }, new URLSearchParams())
-    .toString();
+export function params(kvs: [string, string][]): URLSearchParams {
+  return kvs.reduce((params, [k, v]) => {
+    params.append(k, v);
+    return params;
+  }, new URLSearchParams());
 }
 
 export function defOpts<T extends { [k: string]: T[typeof k] | undefined }>(

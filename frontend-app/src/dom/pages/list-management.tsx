@@ -10,7 +10,7 @@ import {
   typecheckNever,
   MaybeDefined,
   mapMaybe,
-  queryParams,
+  params,
   defOpts,
 } from '../utils/utils';
 
@@ -164,15 +164,23 @@ export const reduce = (init: Model) => (
   }
 };
 
+const compareOn = <T, K extends keyof T>(key: K) => (l: T, r: T): number => {
+  if (l[key] < r[key]) {
+    return -1;
+  } else if (l[key] > r[key]) {
+    return 1;
+  } else {
+    return 0;
+  }
+};
+
 export class Effects {
   constructor(private readonly dispatch: MyDispatch<Msg>) {}
 
   loadListsFromIdb<T>(cont?: (_: twitter.List[]) => T): Msg {
     tdb.readLists().then(
       (lists: twitter.List[]) => {
-        const sorted = lists
-          .slice()
-          .sort((l, r) => (l.name < r.name ? -1 : l.name > r.name ? 1 : 0));
+        const sorted = lists.slice().sort(compareOn('name'));
         this.dispatch({
           type: 'fetch_lists',
           update: {
@@ -237,6 +245,26 @@ export class Effects {
     };
   }
 
+  addMemberToList(userIdStr: string, listIdStr: string): Msg {
+    fetchJson(t('lists/members/create'), {
+      method: 'POST',
+      body: params([
+        ['list_id', listIdStr],
+        ['user_id', userIdStr],
+      ]),
+    }).then(
+      (resp) => {
+        console.log(`Added user ${userIdStr} to list ${listIdStr}`);
+        void resp;
+      },
+      (err) => {
+        console.log(`Failed to add user ${userIdStr} to list ${listIdStr}`);
+        void err;
+      },
+    );
+    return { type: 'noop' };
+  }
+
   fetchListMembersFromNetwork(listIdStr: string): Msg {
     return {
       type: 'fetch_list_members',
@@ -258,7 +286,9 @@ export class Effects {
         },
         () =>
           fetchJson(
-            t('lists/members') + '?' + queryParams([['list_id', listIdStr]]),
+            t('lists/members') +
+              '?' +
+              params([['list_id', listIdStr]]).toString(),
             undefined,
             twitter.parseListMembersResponse,
           ).then((r) => r.users), // TODO: this is unsafe -- we want all pages
@@ -338,7 +368,7 @@ export class Effects {
         fetchJson(
           t('statuses/user_timeline') +
             '?' +
-            queryParams([['user_id', userIdStr], ...pagingParams]),
+            params([['user_id', userIdStr], ...pagingParams]).toString(),
         ),
     );
     return {
@@ -525,6 +555,7 @@ const ListMembersView: FC<{
 };
 
 const Timeline: FC<{
+  user: twitter.User;
   tweets: twitter.Status[];
   dispatch: MyDispatch<Msg>;
 }> = ({ tweets }) => {
@@ -585,12 +616,81 @@ const FocusedUser: FC<{
             load
           </button>
           {remoteData.simpleView(userFocus.tweets, (ts) => (
-            <Timeline tweets={ts} dispatch={dispatch} />
+            <Timeline user={userFocus.user} tweets={ts} dispatch={dispatch} />
           ))}
         </div>
       </>
     );
   }
+};
+
+export const DestinationListList: FC<Props> = ({ model, dispatch }) => {
+  const effects = new Effects(dispatch);
+  return (
+    <>
+      Destination list:
+      {(() => {
+        switch (model.allLists.type) {
+          case 'idle':
+            return (
+              <div className="select">{`Click "fetch" to fetch lists.`}</div>
+            );
+          case 'loading':
+            return <div className="select">Loading...</div>;
+          case 'ok':
+            return (
+              <ul>
+                {model.allLists.data.map((l: twitter.List) => (
+                  <li key={l.id_str}>
+                    <div>
+                      {l.name}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (model.userFocus !== undefined) {
+                            effects.addMemberToList(
+                              model.userFocus.user.id_str,
+                              l.id_str,
+                            );
+                          }
+                        }}
+                      >
+                        {'+'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log(
+                            `${new Date()}: Pretending we're removing user ${
+                              model.userFocus?.user?.id_str
+                            } (${
+                              model.userFocus?.user?.screen_name
+                            }) from list ${l.id_str} (${l.slug})`,
+                          );
+                        }}
+                      >
+                        {'-'}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            );
+          case 'error':
+            return (
+              <div className="select">
+                An error occurred.
+                <code>
+                  {JSON.stringify(model.allLists.error, undefined, 4)}
+                </code>
+              </div>
+            );
+          default:
+            return typecheckNever(model.allLists);
+        }
+      })()}
+    </>
+  );
 };
 
 export const ListManagement: FC<Props> = (props) => {
@@ -642,11 +742,7 @@ export const ListManagement: FC<Props> = (props) => {
           />
         </div>
         <div className="destination-list">
-          Destination list:
-          <ul>
-            <li>(foo list)</li>
-            <li>(bar list)</li>
-          </ul>
+          <DestinationListList {...props} />
         </div>
       </div>
     </div>
