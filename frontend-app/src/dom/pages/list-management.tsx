@@ -12,6 +12,7 @@ import {
   mapMaybe,
   params,
   defOpts,
+  formPostHeaders,
 } from '../utils/utils';
 
 type MyDispatch<T> = (_: T) => T;
@@ -252,9 +253,7 @@ export class Effects {
         ['list_id', listIdStr],
         ['user_id', userIdStr],
       ]),
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: formPostHeaders,
     }).then(
       (resp) => {
         console.log(`Added user ${userIdStr} to list ${listIdStr}`);
@@ -262,7 +261,28 @@ export class Effects {
       },
       (err) => {
         console.log(`Failed to add user ${userIdStr} to list ${listIdStr}`);
-        void err;
+        console.error(err);
+      },
+    );
+    return { type: 'noop' };
+  }
+
+  removeMemberFromList(userIdStr: string, listIdStr: string): Msg {
+    fetchJson(t('lists/members/destroy'), {
+      method: 'POST',
+      body: params([
+        ['list_id', listIdStr],
+        ['user_id', userIdStr],
+      ]),
+      headers: formPostHeaders,
+    }).then(
+      (resp) => {
+        console.log(`Added user ${userIdStr} to list ${listIdStr}`);
+        void resp;
+      },
+      (err) => {
+        console.log(`Filaed to add user ${userIdStr} to list ${listIdStr}`);
+        console.error(err);
       },
     );
     return { type: 'noop' };
@@ -663,13 +683,12 @@ export const DestinationListList: FC<Props> = ({ model, dispatch }) => {
                       <button
                         type="button"
                         onClick={() => {
-                          console.log(
-                            `${new Date()}: Pretending we're removing user ${
-                              model.userFocus?.user?.id_str
-                            } (${
-                              model.userFocus?.user?.screen_name
-                            }) from list ${l.id_str} (${l.slug})`,
-                          );
+                          if (model.userFocus !== undefined) {
+                            effects.removeMemberFromList(
+                              model.userFocus.user.id_str,
+                              l.id_str,
+                            );
+                          }
                         }}
                       >
                         {'-'}

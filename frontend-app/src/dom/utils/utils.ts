@@ -48,6 +48,10 @@ export async function fetchJson<T>(
     .then((j) => (parser ? parser(j) : j));
 }
 
+export const formPostHeaders: Record<string, string> = {
+  'Content-Type': 'application/x-www-form-urlencoded',
+};
+
 export function params(kvs: [string, string][]): URLSearchParams {
   return kvs.reduce((params, [k, v]) => {
     params.append(k, v);
@@ -55,6 +59,9 @@ export function params(kvs: [string, string][]): URLSearchParams {
   }, new URLSearchParams());
 }
 
+/**
+ * Optional default options
+ */
 export function defOpts<T extends { [k: string]: T[typeof k] | undefined }>(
   o?: T,
 ): {
