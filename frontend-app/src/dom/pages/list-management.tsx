@@ -252,6 +252,9 @@ export class Effects {
         ['list_id', listIdStr],
         ['user_id', userIdStr],
       ]),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     }).then(
       (resp) => {
         console.log(`Added user ${userIdStr} to list ${listIdStr}`);
