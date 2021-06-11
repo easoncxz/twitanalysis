@@ -11,11 +11,13 @@ module TwitAnalysis.LoginFlow
   , handleLogin
   , handleLogout
   , viewHome
+  , viewSessionAccessToken
   , sessionAccessToken
   , sessionAccessCred
   ) where
 
 import Control.Monad.IO.Class (liftIO)
+import qualified Data.Aeson as A
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy.Char8 as BSL8
@@ -23,6 +25,7 @@ import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import Data.String (IsString, fromString)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as TL
 import Lens.Micro ((^.))
 import qualified Network.HTTP.Client as HC
@@ -149,3 +152,14 @@ viewHome loginPath UnsafeEnv {envSessionMan} = do
           , TL.pack (show token)
           , "</pre>"
           ]
+
+-- | Render current session's access tokens as a JSON response
+viewSessionAccessToken :: Env -> ActionM ()
+viewSessionAccessToken env@UnsafeEnv {envSessionMan} = do
+  maybeToken <- sessionAccessToken env
+  case maybeToken of
+    Nothing -> Scotty.json A.Null
+    Just (OAuthCred.Token tokB secB) -> do
+      let tok = TE.decodeUtf8 tokB
+          sec = TE.decodeUtf8 secB
+      Scotty.json (A.object ["accessTok" A..= tok, "accessSec" A..= sec])

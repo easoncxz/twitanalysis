@@ -7,6 +7,7 @@ module TwitAnalysis.OAuth.Signing where
 
 import Control.Monad.IO.Class (MonadIO)
 import Crypto.Random (MonadRandom)
+import qualified Data.ByteString as B
 import qualified Network.HTTP.Client as HC
 import qualified Network.OAuth.Signing as OAuthSigning
 import Network.OAuth.Types.Credentials
@@ -49,3 +50,20 @@ oauth ::
 oauth accessCred srv hreq = do
   oax <- genInitOAuthParams accessCred
   return $ OAuthSigning.sign oax srv hreq
+
+adhocSign ::
+     (B.ByteString, B.ByteString)
+  -> (B.ByteString, B.ByteString)
+  -> HC.Request
+  -> IO HC.Request
+adhocSign (consumerKey, consumerSec) (accessTok, accessSec) hreq = do
+  let clientCred =
+        OAuthCred.clientCred (OAuthCred.Token consumerKey consumerSec)
+      permanentCred =
+        OAuthCred.permanentCred (OAuthCred.Token accessTok accessSec) clientCred
+      srv =
+        OAuthParams.Server
+          OAuthParams.AuthorizationHeader
+          OAuthParams.HmacSha1
+          OAuthParams.OAuth1
+  oauth permanentCred srv hreq

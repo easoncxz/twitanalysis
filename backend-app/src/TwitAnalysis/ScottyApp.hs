@@ -66,6 +66,7 @@ scottyApp Env { envAuthEnv
       (Auth.envClientCred envAuthEnv)
       Auth.myOAuthServer
       envLoginEnv
+  Scotty.get "/my-access-token" (LoginFlow.viewSessionAccessToken envLoginEnv)
   Scotty.matchAny "/a-particular-tweet" $ MyProxy.viewOneParticularTweet
   where
     s = fromString
