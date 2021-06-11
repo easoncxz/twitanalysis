@@ -14,6 +14,7 @@ import {
   defOpts,
   formPostHeaders,
 } from '../utils/utils';
+import { useInit } from '../utils/react-utils';
 
 type MyDispatch<T> = (_: T) => T;
 
@@ -433,6 +434,9 @@ export type Props = {
 
 const ListPicker: FC<Props> = ({ model, dispatch }) => {
   const effects = new Effects(dispatch);
+  useInit(() => {
+    dispatch(effects.loadListsFromIdb());
+  });
   return (
     <div className="list-picker">
       {(() => {
@@ -555,6 +559,9 @@ const ListMembersView: FC<{
                           type="button"
                           onClick={() => {
                             dispatch({ type: 'focus_user', user: newFocus });
+                            if (newFocus !== undefined) {
+                              dispatch(effects.loadUserTweets(newFocus.id_str));
+                            }
                           }}
                         >
                           {u.screen_name}
@@ -717,7 +724,7 @@ export const DestinationListList: FC<Props> = ({ model, dispatch }) => {
 
 export const ListManagement: FC<Props> = (props) => {
   const effects = new Effects(props.dispatch);
-  React.useEffect(() => {
+  useInit(() => {
     effects.loadListsFromIdb(
       /**
        * This whole callback pattern is such a hack.
@@ -744,7 +751,7 @@ export const ListManagement: FC<Props> = (props) => {
         }
       },
     );
-  }, []);
+  });
   return (
     <div className="page list-management">
       <p>Manage your Twitter lists</p>
